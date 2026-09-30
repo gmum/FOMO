@@ -1,0 +1,14 @@
+# Install torch first, separately: on aarch64 (e.g. GH200) the cu124 index
+# stops at 2.5.1, so 2.6.0 has to come from cu126.
+#
+#   pip install torch==2.6.0 --index-url https://download.pytorch.org/whl/cu126
+#   pip install -r requirements.txt
+
+diffusers==0.33.1
+transformers==4.48.0
+accelerate==1.1.0
+peft==0.14.0
+numpy==2.2.6
+tqdm
+imageio
+imageio-ffmpeg
