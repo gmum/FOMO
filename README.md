@@ -2,6 +2,8 @@
 
 Official implementation of **FOMO: Forget the Concept, Don't Miss Out on the Scene in Selective Video Unlearning**.
 
+[**Project page**](https://gmum.github.io/FOMO/)
+
 FOMO removes a named concept from a text-to-video diffusion model while leaving
 the rest of the scene close to what the original model would have produced. It
 handles concepts that appear as objects or people, and also concepts that exist
