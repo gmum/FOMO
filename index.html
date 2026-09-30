@@ -3,8 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="robots" content="noindex">
-<title>Selective Video Unlearning</title>
+<title>FOMO: Selective Video Unlearning</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
@@ -16,19 +15,65 @@
 <header class="head">
   <div class="wrap">
     <h1 class="title">FOMO: Forget the Concept, Don&rsquo;t Miss Out on the Scene in Selective Video Unlearning</h1>
-    <p class="sub">Anonymous submission &middot; under double-blind review</p>
+
+    <p class="authors">
+      <a href="https://www.linkedin.com/in/lukaszrudnik/">&#321;ukasz Rudnik</a><sup>1</sup>,
+      <a href="https://www.linkedin.com/in/agnieszka-polowczyk-91381323a/">Agnieszka Polowczyk</a><sup>1,2</sup>,
+      <a href="https://www.linkedin.com/in/alicja-polowczyk-064739266/">Alicja Polowczyk</a><sup>1,2</sup>,
+      <a href="https://scholar.google.com/citations?hl=en&amp;user=0kp0MbgAAAAJ">Przemys&#322;aw Spurek</a><sup>1,2</sup>
+    </p>
+
+    <p class="affil"><sup>1</sup>Jagiellonian University &nbsp;&nbsp; <sup>2</sup>IDEAS Research Institute</p>
+
+    <p class="links">
+      <span class="btn off">Paper</span>
+      <a class="btn" href="https://github.com/gmum/FOMO">Code</a>
+    </p>
   </div>
 </header>
 
 <main>
+
   <section class="section warn">
     <div class="wrap">
-      <h2>Content warning</h2>
       <p class="note">Videos on this page contain content that may be disturbing, including blood, violence and nudity.</p>
     </div>
   </section>
 
+  <section class="section">
+    <div class="wrap">
+      <figure class="figure">
+        <img src="static/images/teaser.jpg" alt="Unlearning results for identity, motion, nudity and gore.">
+        <figcaption>We present <strong>FOMO</strong>: a selective video unlearning method that erases only the unwanted concept, while keeping scene composition and dynamics close to the original. It removes harmful concepts like nudity, the likeness of public figures, and disturbing or violent content, and was specifically designed to handle motion unlearning, where the concept is not an object in the frame but an action carried across the whole clip.</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="wrap">
+      <h2 class="major">Abstract</h2>
+      <p class="prose">The rapid advancement of generative video models has enabled the synthesis of increasingly realistic and temporally coherent videos, while also raising concerns about the generation of harmful content. The reliance on large-scale web datasets during training inevitably exposes these models to undesirable material, making concept unlearning an essential mitigation. Existing methods mainly target static visual concepts, such as objects, identities, or unsafe appearance, largely overlooking motion unlearning. Furthermore, these approaches often pay little attention to preserving the surrounding scene. As a result, successful concept removal may unintentionally alter the background, composition, or overall video dynamics. We argue that effective unlearning should ideally change only what is targeted, while minimizing unnecessary changes to the remaining scene. In this work, we introduce <strong>FOMO</strong>, to the best of our knowledge the first training-based selective video unlearning method that directly treats preservation of the original scene as a priority. We formulate unlearning around two complementary objectives: what to change and what to preserve. Our method localizes concept-related representations and modifies them, while the preservation mechanism maintains non-target scene information without requiring auxiliary data. Beyond simply erasing unwanted concepts, <strong>FOMO</strong> explicitly redirects the generation toward a specified safe alternative. We further extend this formulation to motion unlearning, where the concept is defined by temporal behavior rather than a fixed spatial region. Our solution achieves effective unlearning across unsafe content, object, and motion concepts, while achieving the best trade-off between concept removal and scene preservation.</p>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="wrap">
+      <h2 class="major">Method</h2>
+      <figure class="figure">
+        <img src="static/images/pipeline.jpg" alt="Overview of the FOMO training pipeline.">
+      </figure>
+    </div>
+  </section>
+
   <div id="sections"></div>
+
+  <section class="section">
+    <div class="wrap">
+      <h2>BibTeX</h2>
+      <pre class="bibtex">TODO</pre>
+    </div>
+  </section>
+
 </main>
 
 <footer class="foot">

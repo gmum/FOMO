@@ -56,14 +56,30 @@ function singleSlides(group, title, accent, count) {
   });
 }
 
-function pairs(group, title, accent, count) {
-  return {
-    title: title,
-    accent: accent,
-    aspect: '16 / 9',
-    columns: PAIR_COLUMNS,
-    rows: rowsFor(group, ['baseline', 'ours'], ids(count))
-  };
+var MOTION_TYPES = [
+  ['knife', 'Brandishing a knife', 2],
+  ['fighting', 'Fighting', 4],
+  ['jumping', 'Jumping', 2],
+  ['running', 'Running', 4],
+  ['tongue', 'Sticking out the tongue', 2],
+  ['dancing', 'Dancing', 2]
+];
+
+function motionSlides(accent) {
+  var slides = [];
+  MOTION_TYPES.forEach(function (type) {
+    var list = ids(type[2]);
+    for (var start = 0; start < list.length; start += 2) {
+      slides.push({
+        title: type[1],
+        accent: accent,
+        aspect: '16 / 9',
+        columns: PAIR_COLUMNS,
+        rows: rowsFor(type[0], ['baseline', 'ours'], list.slice(start, start + 2))
+      });
+    }
+  });
+  return slides;
 }
 
 var PEOPLE = [
@@ -154,15 +170,8 @@ window.PAGE_DATA = {
       id: 'motion',
       heading: 'Motion',
       accent: MOTION,
-      layout: 'grid',
-      blocks: [
-        pairs('knife', 'Brandishing a knife', MOTION, 3),
-        pairs('fighting', 'Fighting', MOTION, 4),
-        pairs('jumping', 'Jumping', MOTION, 3),
-        pairs('running', 'Running', MOTION, 4),
-        pairs('tongue', 'Sticking out the tongue', MOTION, 2),
-        pairs('dancing', 'Dancing', MOTION, 2)
-      ]
+      layout: 'carousel',
+      blocks: motionSlides(MOTION)
     },
     {
       id: 'public-figures',
