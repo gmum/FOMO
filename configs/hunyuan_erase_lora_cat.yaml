@@ -1,0 +1,52 @@
+model_path: "hunyuanvideo-community/HunyuanVideo"
+dataset_dir: "data/cat"
+output_dir: "outputs/hunyuan_lora_cat"
+
+concept: "cat"
+neutral_prompt_override: ""
+
+rank: 32
+lora_alpha: 32
+lora_dropout: 0.0
+target_modules:
+  - "attn.add_q_proj"
+  - "attn.add_k_proj"
+
+learning_rate: 0.00002
+adam_beta1: 0.9
+adam_beta2: 0.99
+adam_epsilon: 0.00000001
+weight_decay: 0.01
+max_train_steps: 200
+train_batch_size: 1
+mixed_precision: "bf16"
+gradient_checkpointing: false
+prompt_only_esd: false
+seed: 42
+
+train_width: 512
+train_height: 288
+train_num_frames: 33
+fps: 15
+
+bootstrap_dataset_if_missing: true
+num_bootstrap_videos: 5
+bootstrap_width: 512
+bootstrap_height: 288
+bootstrap_num_frames: 33
+bootstrap_inference_steps: 30
+bootstrap_guidance_scale: 6.0
+
+latent_sample_steps: 28
+timestep_sample_steps: 28
+guidance_scale: 6.0
+negative_guidance: 2.0
+teacher_mode: "base"
+
+lamb_esd: 1.0
+esd_full_video_weight: 1.0
+esd_first_frame_weight: 1.0
+lamb_attn: 0.0
+attn_blocks: "last"
+attention_chunk_size: 256
+max_sequence_length: 256

@@ -1,0 +1,30 @@
+# Python caches
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+.venv/
+venv/
+
+# Local run artifacts
+logs/
+outputs/
+videos/
+eval/
+*.log
+*.err
+
+# Local data/checkpoints
+data/
+results/
+smoke/
+data/
+__pycache__/
+*.pyc
+__pycache__/
+*.pyc
+.cache/
+slurm-*.out
+*.bak
+videos_probe*/

@@ -1,0 +1,40 @@
+tench	null	NONE	A video of a tench fish.	NONE
+tench	bg	pond	A video of a tench fish in a pond.	A video of an empty pond.
+tench	near	a salmon	A video of a tench fish.	A video of a salmon.
+tench	far	a wooden log	A video of a tench fish.	A video of a wooden log.
+English springer	null	NONE	A video of an English springer spaniel dog.	NONE
+English springer	bg	park	A video of an English springer spaniel dog in a park.	A video of an empty park.
+English springer	near	a german shepherd	A video of an English springer spaniel dog.	A video of a german shepherd.
+English springer	far	a cat	A video of an English springer spaniel dog.	A video of a cat.
+cassette player	null	NONE	A video of a cassette player.	NONE
+cassette player	bg	table	A video of a cassette player on a table.	A video of an empty table.
+cassette player	near	a radio	A video of a cassette player.	A video of a radio.
+cassette player	far	a wooden box	A video of a cassette player.	A video of a wooden box.
+chain saw	null	NONE	A video of a chain saw.	NONE
+chain saw	bg	workbench	A video of a chain saw on a workbench.	A video of an empty workbench.
+chain saw	near	an axe	A video of a chain saw.	A video of an axe.
+chain saw	far	a wooden bat	A video of a chain saw.	A video of a wooden bat.
+church	null	NONE	A video of a church building.	NONE
+church	bg	hill	A video of a church building on a hill.	A video of an empty hill.
+church	near	a house	A video of a church building.	A video of a house.
+church	far	a skyscraper	A video of a church building.	A video of a skyscraper.
+French horn	null	NONE	A video of a French horn.	NONE
+French horn	bg	stage	A video of a French horn on a stage.	A video of an empty stage.
+French horn	near	a trumpet	A video of a French horn.	A video of a trumpet.
+French horn	far	a hand fan	A video of a French horn.	A video of a hand fan.
+garbage truck	null	NONE	A video of a garbage truck.	NONE
+garbage truck	bg	street	A video of a garbage truck on a street.	A video of an empty street.
+garbage truck	near	a bus	A video of a garbage truck.	A video of a bus.
+garbage truck	far	a ferrari	A video of a garbage truck.	A video of a ferrari.
+gas pump	null	NONE	A video of a gas pump.	NONE
+gas pump	bg	wall	A video of a gas pump against a wall.	A video of an empty wall.
+gas pump	near	a vending machine	A video of a gas pump.	A video of a vending machine.
+gas pump	far	a wooden closet	A video of a gas pump.	A video of a wooden closet.
+golf ball	null	NONE	A video of a golf ball.	NONE
+golf ball	bg	lawn	A video of a golf ball on a lawn.	A video of an empty lawn.
+golf ball	near	a basketball	A video of a golf ball.	A video of a basketball.
+golf ball	far	a rubber duck	A video of a golf ball.	A video of a rubber duck.
+parachute	null	NONE	A video of a parachute.	NONE
+parachute	bg	sky	A video of a parachute in the sky.	A video of an empty sky.
+parachute	near	a hot air balloon	A video of a parachute.	A video of a hot air balloon.
+parachute	far	an airplane	A video of a parachute.	A video of an airplane.

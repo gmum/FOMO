@@ -1,0 +1,12 @@
+# Concepts for the ESD vs ESD+L_V visual comparison. One per line.
+# Not Imagenette classes: these are only ever looked at, never scored by the
+# ImageNet classifier, so they are free to be whatever reads clearly on screen.
+#
+#   sbatch --array=0-7 --export=ALL,CONCEPTS_FILE=configs/esd_visual_concepts.txt,\
+#          SWEEP_DIR=esd_visual slurm/train_esd_sweep_gh200.sbatch
+#
+# Index = concept * 2 + variant, so 0,2,4,6 are plain ESD and 1,3,5,7 are ESD+L_V.
+dog
+taxi
+vending machine
+greenhouse

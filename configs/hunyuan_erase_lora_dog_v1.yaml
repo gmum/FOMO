@@ -1,0 +1,97 @@
+# Config dla oduczania "dog" z L_V (Wariant A: dopasowanie V).
+# Bazuje na przebiegu dog_alone dziewczyn, dokłada parametry L_V.
+# Docelowa lokalizacja: configs/hunyuan_erase_lora_dog_v.yaml
+
+model_path: "hunyuanvideo-community/HunyuanVideo"
+dataset_dir: "data/dog_alone_768x432_20_gc"
+output_dir: "outputs/dog_v"
+
+concept: "dog"
+neutral_prompt_override: ""
+
+# --- LoRA (jak w dog_alone) ---
+rank: 8
+lora_alpha: 8
+lora_dropout: 0.0
+target_modules:
+  - "attn.add_q_proj"
+  - "attn.add_k_proj"
+
+# --- optymalizator (jak w dog_alone) ---
+learning_rate: 0.003
+adam_beta1: 0.9
+adam_beta2: 0.999
+adam_epsilon: 0.00000001
+weight_decay: 0.00001
+
+max_train_steps: 1000
+checkpointing_steps: 50
+train_batch_size: 1
+mixed_precision: "bf16"
+gradient_checkpointing: true
+prompt_only_esd: false
+seed: 42
+
+# --- rozmiar (jak w dog_alone) ---
+train_width: 768
+train_height: 432
+train_num_frames: 33
+fps: 15
+
+# --- bootstrap: dane już istnieją, ale zostawiamy spójne wartości ---
+bootstrap_dataset_if_missing: true
+num_bootstrap_videos: 20
+bootstrap_width: 768
+bootstrap_height: 432
+bootstrap_num_frames: 33
+bootstrap_inference_steps: 30
+bootstrap_guidance_scale: 6.0
+
+# --- ESD (jak w dog_alone) ---
+latent_sample_steps: 28
+timestep_sample_steps: 28
+guidance_scale: 6.0
+negative_guidance: 1.0
+teacher_mode: "base"
+
+lamb_esd: 1.0
+esd_full_video_weight: 1.0
+esd_first_frame_weight: 1.0
+lamb_attn: 0.0
+attn_blocks: "last"
+attention_chunk_size: 256
+max_sequence_length: 256
+
+# =====================================================================
+# L_V — nowe parametry
+# =====================================================================
+
+# Waga L_V w łącznej stracie. 0 = wyłączone (czyli zachowanie baseline'u).
+# Do ablacji: 0.1 / 0.5 / 1.0
+lamb_v: 0.5
+
+# Ile pierwszych kroków denoisingu obejmuje L_V.
+# Empirycznie: wstrzykiwanie V działa dla 1-4, przy 5 wraca pies.
+# Dlatego celujemy w dolną część bezpiecznego zakresu.
+v_steps: 1
+
+# Single blocks o indeksie WIĘKSZYM niż ta wartość (spójne z block_min=20
+# z test_hunyuan_vbank.py, czyli bloki 21-39).
+v_block_min: 20
+
+# true  -> porównuj tylko tokeny wideo
+# false -> porównuj wideo + tekst
+v_video_only: true
+
+# Prawdopodobieństwo, że krok denoisingu zostanie wylosowany z [0, v_steps).
+# 0.0 = brak biasu (L_V dostaje sygnał tylko w ~11% kroków)
+# 1.0 = zawsze wczesne kroki (L_ESD traci pokrycie późnych kroków)
+v_early_prob: 0.5
+
+# Wyłącz gradient checkpointing na czas forwardu studenta z przechwytywaniem V.
+# MUSI zostać true — inaczej backward przelicza forward bez przechwytywania
+# i torch zgłasza CheckpointError (rożna liczba zapisanych tensorow).
+# Kosztem jest pamięć: bez checkpointingu forward studenta trzyma pełne
+# aktywacje. Jeśli poleci OOM, zmniejsz najpierw train_num_frames (33 -> 17),
+# potem rozdzielczość (768x432 -> 512x288).
+v_disable_gc: true

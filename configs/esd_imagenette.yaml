@@ -1,0 +1,81 @@
+# Base config for the ESD sweep over the ten Imagenette classes.
+#
+# Everything that varies per run -- concept, output_dir, dataset_dir, lamb_v --
+# is overridden from the command line by slurm/train_esd_sweep_gh200.sbatch.
+# What stays here is what has to be identical across the sweep.
+#
+# prompt_only_esd keeps the run data-free: no bootstrap videos are generated,
+# only the prompt metadata. That matches how the IMAP-H models were trained,
+# which is the only reason the two rows are comparable at all. It forces
+# lamb_attn to zero, because the attention loss needs video latents.
+
+model_path: "hunyuanvideo-community/HunyuanVideo"
+
+neutral_prompt_override: ""
+prompt_only_esd: true
+bootstrap_dataset_if_missing: true
+
+# One prompt, not five. The default bootstrap scenes are written for animals --
+# "sitting on a sofa", "sniffing flowers in a meadow" -- and applying them to a
+# greenhouse or a vending machine would train on nonsense. The override is the
+# same sentence the IMAP-H runs use as their source prompt, with the empty
+# string as the neutral, so both methods erase toward the same place.
+num_bootstrap_videos: 1
+bootstrap_prompt_override: "A video of a {concept}."
+bootstrap_neutral_prompt_override: ""
+
+# LoRA placement copied from the IMAP-H sweep. Same rank, same alpha, same two
+# projections, so any difference between the rows comes from the objective
+# rather than from capacity or from where the adapter sits.
+rank: 8
+lora_alpha: 8
+lora_dropout: 0.0
+target_modules:
+  - "attn.add_q_proj"
+  - "attn.add_k_proj"
+
+# ESD's own learning rate. It is NOT the 1e-3 the IMAP-H runs use: the two
+# objectives have different gradient scales and copying the number across would
+# handicap the baseline. Sweep it before reporting the row.
+learning_rate: 0.00002
+adam_beta1: 0.9
+adam_beta2: 0.99
+adam_epsilon: 0.00000001
+weight_decay: 0.01
+
+lamb_esd: 1.0
+lamb_attn: 0.0
+esd_full_video_weight: 1.0
+esd_first_frame_weight: 1.0
+negative_guidance: 2.0
+teacher_mode: "base"
+
+max_train_steps: 250
+checkpointing_steps: 10
+train_batch_size: 1
+mixed_precision: "bf16"
+gradient_checkpointing: true
+seed: 42
+
+# NOT the generation resolution. L_V has to run the student forward with
+# gradient checkpointing off -- the capture processor saves a different number
+# of tensors on the recompute pass, so leaving it on raises CheckpointError
+# rather than saving memory. Without checkpointing the full activations of a
+# 1280x720x17 sequence are about 18k tokens and overflow 95 GiB, which is what
+# killed the first attempt at 43 seconds in.
+#
+# Both variants train here, not only the one that needs it: the point of the
+# pair is L_V against no L_V, and that comparison dies the moment the two runs
+# see different inputs. Generation still happens at 1280x720.
+train_width: 512
+train_height: 288
+train_num_frames: 17
+fps: 8
+
+# Value-preservation defaults, matching the IMAP-H sweep. lamb_v is overridden
+# per run: 0 for the plain ESD row, 0.5 for ESD + L_V.
+lamb_v: 0.0
+v_steps: 1
+v_block_min: 20
+v_early_prob: 0.5
+v_video_only: true

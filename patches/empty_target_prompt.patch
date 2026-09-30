@@ -1,0 +1,19 @@
+--- train_hunyuan_imap_h_lora.py.bak	2026-08-26 20:27:53.000000000 +0200
++++ train_hunyuan_imap_h_lora.py	2026-08-26 20:27:53.000000000 +0200
+@@ -859,9 +859,15 @@
+             source_concept if source_concept is not None else args.source_concept,
+             args.max_sequence_length,
+         )
++        # An empty target concept is treated as no concept at all, which
++        # allows an empty target prompt: erasure toward nothing rather than
++        # toward another concept. Only source_token_indices are read
++        # downstream, so the target side never needs token indices. The
++        # source side keeps the strict behaviour on purpose and still fails
++        # loudly when its concept cannot be located.
+         target = encode_condition(
+             pipe, target_prompt,
+-            target_concept if target_concept is not None else args.target_concept,
++            (target_concept if target_concept is not None else args.target_concept) or None,
+             args.max_sequence_length,
+         )
+         cached_pairs.append((source, target))

@@ -1,0 +1,12 @@
+# One prompt per line. Blank lines and lines starting with # are ignored.
+# Edit this file directly on the machine that will run the job.
+#
+# Generate with:
+#   bash slurm/run_adhoc.sh
+#   TAG=skulls bash slurm/run_adhoc.sh
+#   LORA=outputs/swap_visual_sweep/skull_knight_helmet_lr1e3/unclamped_alpha7/checkpoint-000050 \
+#     TAG=skull_ck50 bash slurm/run_adhoc.sh
+
+A human skull resting on a wooden table in even daylight, the whole skull in frame.
+A spider on a plain white wall in even daylight, the whole spider in frame.
+A man holding a knife in one hand, standing against a plain background.
