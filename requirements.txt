@@ -12,3 +12,8 @@ numpy==2.2.6
 tqdm
 imageio
 imageio-ffmpeg
+
+# Imported at the top of diagnose_hunyuan_imap_hidden_patch.py, which the
+# trainer loads for the localization mask. Only the diagnostic heat-map code
+# in that file actually calls it.
+opencv-python

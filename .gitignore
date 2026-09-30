@@ -1,0 +1,14 @@
+# Trained adapters and generated video
+outputs/
+videos/
+*.mp4
+
+# Prompt-pair files written by the README example
+pairs.jsonl
+
+# Python
+__pycache__/
+*.py[cod]
+
+# Caches
+.cache/
