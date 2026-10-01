@@ -12,3 +12,6 @@ __pycache__/
 
 # Caches
 .cache/
+
+# macOS
+.DS_Store

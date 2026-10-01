@@ -1,139 +1,67 @@
-# FOMO
+<div align="center">
 
-Official implementation of **FOMO: Forget the Concept, Don't Miss Out on the Scene in Selective Video Unlearning**.
+<h1>FOMO: Forget the Concept, Don't Miss Out on the Scene<br>in Selective Video Unlearning</h1>
 
-[**Project page**](https://gmum.github.io/FOMO/)
+[Łukasz Rudnik](https://www.linkedin.com/in/lukaszrudnik/)<sup>1</sup>,
+[Agnieszka Polowczyk](https://www.linkedin.com/in/agnieszka-polowczyk-91381323a/)<sup>1,2</sup>,
+[Alicja Polowczyk](https://www.linkedin.com/in/alicja-polowczyk-064739266/)<sup>1,2</sup>,
+[Przemysław Spurek](https://scholar.google.com/citations?hl=en&user=0kp0MbgAAAAJ)<sup>1,2</sup>
 
-FOMO removes a named concept from a text-to-video diffusion model while leaving
-the rest of the scene close to what the original model would have produced. It
-handles concepts that appear as objects or people, and also concepts that exist
-only across frames, such as a motion.
+<sup>1</sup> Jagiellonian University &nbsp;&nbsp; <sup>2</sup> IDEAS Research Institute
 
-## Installation
+[![arXiv](https://img.shields.io/badge/arXiv-2609.39605-b31b1b.svg)](https://arxiv.org/abs/2609.39605)
+[![Project Page](https://img.shields.io/badge/Project-Page-blue)](https://gmum.github.io/FOMO/)
 
-```bash
-conda create -n fomo python=3.10 -y
-conda activate fomo
+<br>
 
-# torch is installed separately because the right index depends on the
-# platform. On aarch64 (for example GH200) the cu124 index stops at 2.5.1,
-# so 2.6.0 has to come from cu126.
-pip install torch==2.6.0 --index-url https://download.pytorch.org/whl/cu126
+<img src="assets/teaser.jpg" width="100%">
 
-pip install -r requirements.txt
-```
+&nbsp;
 
-The implementation targets
-[HunyuanVideo](https://huggingface.co/hunyuanvideo-community/HunyuanVideo);
-the weights are downloaded on first use and take tens of gigabytes, so on a
-cluster point the cache somewhere with room before the first run:
+</div>
 
-```bash
-export HF_HOME=/path/with/space/huggingface
-```
+<p align="justify">
+<b>Abstract:</b> The rapid advancement of generative video models has enabled the synthesis of increasingly realistic and temporally coherent videos, while also raising concerns about the generation of harmful content. The reliance on large-scale web datasets during training inevitably exposes these models to undesirable material, making concept unlearning an essential mitigation. Existing methods mainly target static visual concepts, such as objects, identities, or unsafe appearance, largely overlooking motion unlearning. Furthermore, these approaches often pay little attention to preserving the surrounding scene. As a result, successful concept removal may unintentionally alter the background, composition, or overall video dynamics. We argue that effective unlearning should ideally change only what is targeted, while minimizing unnecessary changes to the remaining scene. In this work, we introduce FOMO, to the best of our knowledge the first training-based selective video unlearning method that directly treats preservation of the original scene as a priority. We formulate unlearning around two complementary objectives: what to change and what to preserve. Our method localizes concept-related representations and modifies them, while the preservation mechanism maintains non-target scene information without requiring auxiliary data. Beyond simply erasing unwanted concepts, FOMO explicitly redirects the generation toward a specified safe alternative. We further extend this formulation to motion unlearning, where the concept is defined by temporal behavior rather than a fixed spatial region. Our solution achieves effective unlearning across unsafe content, object, and motion concepts, while achieving the best trade-off between concept removal and scene preservation.
+</p>
 
-## Unlearning a concept
+<div align="center">
 
-A run is defined by the concept to erase, the concept that replaces it, and a
-pair of prompts differing only in those two words.
+<img src="assets/pipeline.jpg" width="100%">
 
-```bash
-export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
+<br>
 
-echo '{"source_prompt": "a video of a dog", "target_prompt": "a video of a cat"}' > pairs.jsonl
+### [**→ Setup and usage ←**](SETUP.md)
 
-python train_hunyuan_imap_h_lora.py \
-    --output_dir outputs/dog \
-    --source_concept "dog" \
-    --target_concept "cat" \
-    --prompt_pairs_jsonl pairs.jsonl \
-    --max_train_steps 250 \
-    --learning_rate 1e-3 \
-    --imap_alpha 7 \
-    --lamb_v 0.5 \
-    --v_steps 1 \
-    --v_video_only \
-    --no-v_disable_gc \
-    --split_hv_backward \
-    --gradient_checkpointing \
-    --height 720 --width 1280 --num_frames 17 \
-    --skip_eval
-```
+</div>
 
-The file may hold more than one pair, one JSON object per line, in which case
-each training step samples one of them. An empty `target_prompt` erases the
-concept toward nothing rather than toward a replacement.
+## ✅ Project Status
 
-Training writes a checkpoint every `--checkpointing_steps` steps into
-`outputs/<name>/checkpoint-XXXXXX/`, and the final weights into
-`outputs/<name>/` itself.
+- [x] Paper on arXiv
+- [x] Project page with examples
+- [x] Training and inference code
+- [ ] Evaluation code
+- [ ] Pretrained adapters
 
-### Fitting on the GPU
+## 🔥 News
 
-At 720x1280 the run above needs close to 80 GB and will not fit without the
-last four flags. `--no-v_disable_gc` matters most: the default is the opposite,
-and it turns gradient checkpointing **off** for the student pass whenever the
-preservation loss is active, which is enough to exhaust a 95 GB card.
-`--split_hv_backward` splits that pass in two and lowers the peak further, at
-the cost of one extra forward. Dropping to `--height 432 --width 768` is the
-other way out.
-
-### Key arguments
-
-| argument | meaning |
-|---|---|
-| `--imap_alpha` | how far the representation is pushed toward the safe prompt; values above 1 extrapolate past it |
-| `--lamb_v` | weight of the preservation term |
-| `--v_steps` | how many early denoising steps the preservation term covers |
-| `--double_blocks` | transformer blocks where the alignment loss is applied |
-| `--imap_mode` | `object` for things and people, `video` for motions |
-| `--clamp_mask` | clamp the localization weight to `[0, 1]`; off by default |
-
-## Generating video
-
-```bash
-# original model
-python generate.py --prompt "a video of a dog" --output videos/base.mp4
-
-# after unlearning
-python generate.py --prompt "a video of a dog" --output videos/erased.mp4 \
-    --lora outputs/dog
-```
-
-With the same `--seed` the two runs differ only by the adapter, so they can be
-placed side by side. Passing a run directory to `--lora` picks its newest
-checkpoint; pass a `checkpoint-XXXXXX/` path to choose one yourself.
-
-## What is in this repository
-
-```
-train_hunyuan_imap_h_lora.py              training
-diagnose_hunyuan_imap_hidden_patch.py     concept localization
-generate.py                               sampling, with or without an adapter
-receler/loras/hunyuan_peft_lora.py        LoRA placement for HunyuanVideo
-receler/training/                         flow timesteps, token lookup, attention capture
-```
-
-Adapters are written to `outputs/`, generated video to `videos/`; both are
-ignored by git.
-
-Training was run on HunyuanVideo at 720x1280, 17 frames, with LoRA rank 8 on
-the text-stream query and key projections, α = 7 and λ_V = 0.5.
-
-## Acknowledgements
-
-The LoRA placement and training utilities under `receler/` are adapted from
-[Receler](https://github.com/jasper0314-huang/Receler), used under its original
-licence. The idea of ranking attention heads by their frame-wise separability
-follows IMAP; the implementation here is our own.
+- **[2026.10.01]** Paper released on arXiv.
 
 ## Citation
 
+If you find our work useful, please consider citing:
+
 ```bibtex
-@inproceedings{fomo,
-  title     = {FOMO: Forget the Concept, Don't Miss Out on the Scene in Selective Video Unlearning},
-  author    = {TODO},
-  booktitle = {TODO},
-  year      = {2027}
+@misc{rudnik2026fomoforgetconceptdont,
+      title={FOMO: Forget the Concept, Don't Miss Out on the Scene in Selective Video Unlearning},
+      author={Łukasz Rudnik and Agnieszka Polowczyk and Alicja Polowczyk and Przemysław Spurek},
+      year={2026},
+      eprint={2609.39605},
+      archivePrefix={arXiv},
+      primaryClass={cs.CV},
+      url={https://arxiv.org/abs/2609.39605},
 }
 ```
+
+## Acknowledgements
+
+TODO
