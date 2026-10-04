@@ -104,6 +104,8 @@ With the same `--seed` the two runs differ only by the adapter, so they can be
 placed side by side. Passing a run directory to `--lora` picks its newest
 checkpoint; pass a `checkpoint-XXXXXX/` path to choose one yourself.
 
+`generate_nudity_motion.py` uses the local Diffusers `0.33.0.dev0` build from T2VUnlearning.
+
 ## What is in this repository
 
 ```

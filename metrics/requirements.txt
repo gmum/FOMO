@@ -1,0 +1,12 @@
+# Evaluation uses a separate environment from FOMO training.
+# Install PyTorch for your CUDA platform separately (reference: 2.9.1+cu128).
+# Versions below match the inspected Qwen evaluation environment.
+transformers @ git+https://github.com/huggingface/transformers.git@c2ab41671b8919050c69812b206fc3aa75391f40
+accelerate==1.14.0
+numpy==2.4.4
+pillow==12.3.0
+opencv-python-headless==5.0.0.93
+# Paired DINO/LPIPS evaluation (torchvision matches PyTorch 2.9.1).
+torchvision==0.24.1
+lpips==0.1.4
+scipy==1.15.3
