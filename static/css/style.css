@@ -317,10 +317,39 @@ body.shown #sections > section {
   line-height: 1.8;
 }
 
+.bibtex-box { position: relative; max-width: 88ch; margin: 0 auto; }
+.copy {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 30px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  background: none;
+  border: 0;
+  color: var(--fg-dim);
+  cursor: pointer;
+  transition: color .15s ease;
+}
+.copy svg {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.copy:hover { color: var(--fg); }
+.copy.done { color: #8fc7a4; }
+.copy .check { display: none; }
+.copy.done .mark { display: none; }
+.copy.done .check { display: inline; }
+
 .bibtex {
   text-align: left;
-  max-width: 88ch;
-  margin: 0 auto;
   background: var(--panel);
   border-top: 2px solid var(--line);
   padding: 18px;

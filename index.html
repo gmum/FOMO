@@ -88,7 +88,9 @@
   <section class="section" id="bibtex">
     <div class="wrap">
       <h2>BibTeX</h2>
-      <pre class="bibtex">@misc{rudnik2026fomoforgetconceptdont,
+      <div class="bibtex-box">
+        <button class="copy" id="copy" type="button" title="Copy BibTeX" aria-label="Copy BibTeX"><svg viewBox="0 0 24 24" aria-hidden="true"><rect class="mark" x="9" y="9" width="11" height="11" rx="2"/><path class="mark" d="M5 15V5a2 2 0 0 1 2-2h8"/><path class="check" d="M20 6 9 17l-5-5"/></svg></button>
+        <pre class="bibtex" id="cite">@misc{rudnik2026fomoforgetconceptdont,
       title={FOMO: Forget the Concept, Don't Miss Out on the Scene in Selective Video Unlearning},
       author={Łukasz Rudnik and Agnieszka Polowczyk and Alicja Polowczyk and Przemysław Spurek},
       year={2026},
@@ -97,6 +99,7 @@
       primaryClass={cs.CV},
       url={https://arxiv.org/abs/2609.39605},
 }</pre>
+      </div>
     </div>
   </section>
 
@@ -110,6 +113,31 @@
 <script src="static/js/data.js"></script>
 <script src="static/js/gallery.js"></script>
 <script>
+var copy = document.getElementById('copy');
+copy.addEventListener('click', function () {
+  var text = document.getElementById('cite').textContent;
+  function done() {
+    copy.classList.add('done');
+    setTimeout(function () { copy.classList.remove('done'); }, 1600);
+  }
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(text).then(done, fallback);
+  } else {
+    fallback();
+  }
+  function fallback() {
+    var area = document.createElement('textarea');
+    area.value = text;
+    area.setAttribute('readonly', '');
+    area.style.position = 'fixed';
+    area.style.opacity = '0';
+    document.body.appendChild(area);
+    area.select();
+    try { document.execCommand('copy'); done(); } catch (e) {}
+    document.body.removeChild(area);
+  }
+});
+
 var toggle = document.getElementById('reveal');
 toggle.addEventListener('click', function () {
   toggle.textContent = document.body.classList.toggle('shown') ? 'Hide videos' : 'Show videos';
