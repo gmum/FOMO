@@ -7,7 +7,6 @@
   --fg-dim: #616b78;
   --line: #232931;
   --gap: 3px;
-  --gap-pair: 16px;
   --page: 1520px;
   --measure: 68ch;
   --sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
@@ -139,9 +138,6 @@ p { margin: 0 0 14px; }
 
 .note { color: var(--fg-soft); font-size: .9rem; max-width: 60ch; text-wrap: balance; }
 
-.figure figcaption strong,
-.wrap p.prose strong { color: var(--fg); font-weight: 600; }
-
 .warn .note {
   max-width: 70ch;
   margin: 0 auto;
@@ -207,7 +203,7 @@ body.shown .warn .note .reveal:hover {
 #sections > section + section { margin-top: 214px; }
 #sections > section > .wrap { flex: none; width: 100%; }
 #sections > section > .wrap:last-child { margin-top: auto; margin-bottom: auto; }
-#sections > section > .wrap > h2 { font-size: .95rem; letter-spacing: .1em; }
+#sections > section > .wrap > h2 { font-size: 1.1rem; letter-spacing: .1em; }
 #sections > section#motion { padding-bottom: 124px; }
 #motion > .wrap > h2 { margin-bottom: 10px; }
 #sections > section#public-figures { padding-top: 10px; }
@@ -219,8 +215,9 @@ body.shown .warn .note .reveal:hover {
   justify-content: safe center;
   margin-bottom: 130px;
 }
+#public-figures > .wrap > .block .heads span { letter-spacing: .02em; }
 #public-figures > .wrap > .block > .panel {
-  max-width: calc((100vh - 412px) * 2.1333 + 72px);
+  max-width: calc((100vh - 290px) * 2.1333 + 72px);
   width: 100%;
   margin: 0 auto;
 }
@@ -250,6 +247,23 @@ body.shown #sections > section {
   max-width: none;
 }
 
+/* Napis FOMO w tytule. Styl przelacza sie klasa w index.html:
+   <span class="fomo">       zwykly
+   <span class="fomo smoke"> dym                                       */
+.title .fomo { display: inline-block; }
+
+.title .fomo.smoke {
+  color: #f2f5f9;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='200'%3E%3Cdefs%3E%3Cfilter id='f' color-interpolation-filters='sRGB'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.009' numOctaves='6' seed='7' stitchTiles='stitch'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0.949 0 0 0 0 0.961 0 0 0 0 0.976 0 0 0 1 0'/%3E%3CfeComponentTransfer%3E%3CfeFuncA type='table' tableValues='0.4 0.88 1 1'/%3E%3C/feComponentTransfer%3E%3C/filter%3E%3ClinearGradient id='g' x1='0' y1='0' x2='0' y2='1'%3E%3Cstop offset='0.14' stop-color='%23fff' stop-opacity='1'/%3E%3Cstop offset='1' stop-color='%23fff' stop-opacity='0.3'/%3E%3C/linearGradient%3E%3Cmask id='m'%3E%3Crect width='100%25' height='100%25' fill='url(%23g)'/%3E%3C/mask%3E%3C/defs%3E%3Crect width='100%25' height='100%25' filter='url(%23f)' mask='url(%23m)'/%3E%3C/svg%3E");
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+  -webkit-background-clip: text;
+  background-clip: text;
+}
+@supports ((-webkit-background-clip: text) or (background-clip: text)) {
+  .title .fomo.smoke { color: transparent; }
+}
+
 .authors { font-size: 1.02rem; line-height: 1.7; margin: 0 auto 8px; max-width: 74ch; }
 .authors a { text-decoration: none; color: var(--fg); border-bottom: 1px solid var(--fg-dim); }
 .authors a:hover { border-bottom-color: var(--fg); }
@@ -272,7 +286,6 @@ body.shown #sections > section {
   text-decoration: none;
 }
 .btn:hover { background: #242a33; border-color: var(--fg-dim); }
-.btn.off { color: var(--fg-dim); cursor: default; }
 .btn .arxiv-mark { width: 13px; height: 18px; flex: none; }
 .btn .gh-mark { width: 17px; height: 17px; flex: none; }
 
@@ -340,7 +353,6 @@ body.shown #sections > section {
   flex: none;
   background: var(--accent, var(--fg-dim));
 }
-.block-head p { margin: 0 auto; font-size: .88rem; color: var(--fg-soft); }
 
 .panel.narrow { max-width: 860px; margin: 0 auto; }
 
@@ -360,15 +372,44 @@ body.shown #sections > section {
   margin-bottom: 9px;
 }
 .heads span {
-  font-size: .72rem;
+  font-size: .78rem;
   letter-spacing: .1em;
   text-transform: uppercase;
   text-align: center;
-  color: var(--fg-dim);
+  color: var(--fg-soft);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
+/* Funkcje straty w naglowkach ablacji.
+   Jesli plik static/fonts/KaTeX_Caligraphic-Regular.woff2 istnieje, L wyglada
+   jak \mathcal{L} z LaTeXa. Jesli go nie ma, zostaje zwykle L z Timesa.       */
+@font-face {
+  font-family: "MathCal";
+  src: url("../fonts/KaTeX_Caligraphic-Regular.woff2") format("woff2");
+  font-display: swap;
+}
+#ablation .heads > span {
+  font-size: .86rem;
+  overflow: visible;
+  position: relative;
+  top: -3px;
+}
+#ablation .heads .loss { top: 1px; }
+#ablation .heads > span.main .loss { color: var(--fg); }
+#ablation .loss {
+  font-family: "MathCal", "Times New Roman", Times, serif;
+  font-size: 1.2rem;
+  line-height: 1;
+  letter-spacing: .01em;
+  text-transform: none;
+  position: relative;
+  top: -2px;
+}
+
+#ablation .loss sub, #ablation .loss sup { font-size: .68em; line-height: 0; }
+#ablation .loss sub { bottom: -.12em; }
+
 .heads span.main { color: var(--fg); }
 .heads span.main::before {
   content: "";
@@ -382,21 +423,6 @@ body.shown #sections > section {
 
 .row + .row { margin-top: 18px; }
 .rows.tight .row + .row { margin-top: var(--gap); }
-.rows.snug .row + .row { margin-top: 9px; }
-.rows.snug .row-label { margin-bottom: 4px; }
-
-.row-label {
-  font-size: .8rem;
-  color: var(--fg-dim);
-  margin-bottom: 7px;
-  display: flex;
-  gap: 10px;
-  align-items: baseline;
-  flex-wrap: wrap;
-  justify-content: center;
-}
-.row-label b { color: var(--fg-soft); font-weight: 500; }
-
 .grid {
   display: grid;
   grid-template-columns: repeat(var(--cols, 3), minmax(0, 1fr));
@@ -405,21 +431,29 @@ body.shown #sections > section {
 
 .tile { margin: 0; min-width: 0; }
 
+.block.stacked .grid { row-gap: 20px; }
 .block.stacked .heads { display: none; }
 .block.stacked .tile-label { display: block; }
-.block.stacked .tile.split { margin-left: 0; }
-.tile.split, .heads span.split { margin-left: var(--gap-pair); }
 
 .tile-label {
   display: none;
-  font-size: .72rem;
+  font-size: .78rem;
   letter-spacing: .1em;
   text-transform: uppercase;
-  color: var(--fg-dim);
+  color: var(--fg-soft);
   margin-bottom: 6px;
   text-align: center;
 }
 .tile.main .tile-label { color: var(--fg); }
+.tile.main .tile-label::before {
+  content: "";
+  display: inline-block;
+  vertical-align: middle;
+  width: 5px;
+  height: 5px;
+  margin: -2px 6px 0 0;
+  background: var(--accent, var(--fg-soft));
+}
 
 .frame {
   position: relative;
@@ -545,19 +579,10 @@ body.shown #sections > section {
 }
 .lightbox-close:hover { color: var(--fg); }
 
-.foot {
-  border-top: 1px solid var(--line);
-  padding: 22px 0 60px;
-  font-size: .82rem;
-  color: var(--fg-dim);
-}
-.foot p { margin: 0 auto; }
-
 @media (max-width: 1000px) {
   .heads { display: none; }
   .tile-label { display: block; }
   .grid { grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px; }
-  .tile.split { margin-left: 0; }
   .row + .row { margin-top: 26px; }
 }
 

@@ -25,6 +25,13 @@
     return node;
   }
 
+  function makeLabel(tag, className, info) {
+    var node = make(tag, className);
+    if (info.html) node.innerHTML = info.html;
+    else node.textContent = info.name || '';
+    return node;
+  }
+
   function Group(root) {
     this.root = root;
     this.videos = Array.prototype.slice.call(root.querySelectorAll('video'));
@@ -235,7 +242,7 @@
     if (info.split) classes += ' split';
 
     var tile = make('figure', classes);
-    tile.appendChild(makeText('figcaption', 'tile-label', info.name || ''));
+    tile.appendChild(makeLabel('figcaption', 'tile-label', info));
 
     var frame = make('div', 'frame');
     frame.style.setProperty('--aspect', aspect || '16 / 9');
@@ -277,7 +284,7 @@
       var classes = '';
       if (info.main) classes += 'main ';
       if (info.split) classes += 'split';
-      heads.appendChild(makeText('span', classes.trim() || null, info.name || ''));
+      heads.appendChild(makeLabel('span', classes.trim() || null, info));
     });
     panel.appendChild(heads);
 

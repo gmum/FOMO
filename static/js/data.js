@@ -21,7 +21,13 @@ var SOTA_METHODS = ['baseline', 'esd', 'safree', 't2v', 'negprompt', 'ours'];
 
 var PAIR_COLUMNS = ['Baseline', { name: 'Ours', main: true }];
 
-var ABLATION_COLUMNS = ['Baseline', 'L_H', 'L_V', 'L_H + L_V', { name: 'Ours', main: true }];
+var ABLATION_COLUMNS = [
+  'Baseline',
+  { name: 'L_H', html: '<span class="loss">L<sub>H</sub></span>' },
+  { name: 'L_V mask', html: '<span class="loss">L<sub>V</sub><sup>mask</sup></span>' },
+  { name: 'L_H + L_V full', html: '<span class="loss">L<sub>H</sub> + L<sub>V</sub><sup>full</sup></span>' },
+  { name: 'FOMO', main: true, html: '<span class="loss">L<sub>H</sub> + L<sub>V</sub><sup>mask</sup></span>' }
+];
 
 var ABLATION_METHODS = ['baseline', 'lh', 'lv', 'lh_lv', 'ours'];
 
@@ -99,11 +105,9 @@ function matrixBlock(accent) {
     accent: accent,
     aspect: '16 / 9',
     gap: '8px',
-    snug: true,
     columns: MATRIX_COLUMNS,
     rows: PEOPLE.map(function (person, index) {
       return {
-        label: person[1],
         markAt: index + 1,
         videos: ['original'].concat(PEOPLE.map(function (other) {
           return other[0];
