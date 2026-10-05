@@ -94,9 +94,8 @@ var MATRIX_COLUMNS = ['Original'].concat(PEOPLE.map(function (person) {
   return person[1];
 }));
 
-function matrixBlock(title, accent) {
+function matrixBlock(accent) {
   return {
-    title: title,
     accent: accent,
     aspect: '16 / 9',
     gap: '8px',
@@ -179,7 +178,7 @@ window.PAGE_DATA = {
       accent: PUBLIC,
       layout: 'mixed',
       blocks: [
-        matrixBlock('Identity matrix', PUBLIC),
+        matrixBlock(PUBLIC),
         personSlides(PUBLIC)
       ]
     }

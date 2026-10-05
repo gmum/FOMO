@@ -541,7 +541,8 @@
     var host = document.getElementById('sections');
 
     if (host && (data.sections || []).length > 1) {
-      host.parentNode.insertBefore(buildNav(data.sections), host);
+      var anchor = document.getElementById('nav-slot') || host;
+      anchor.parentNode.insertBefore(buildNav(data.sections), anchor);
     }
 
     if (host) {
