@@ -7,6 +7,8 @@
   var RATE_LIMIT = 0.14;
   var CHECK_EVERY = 250;
   var LOAD_TIMEOUT = 12000;
+  var PREFETCH_LIMIT = 4;
+  var PREFETCH_DELAY = 1200;
 
   var PREV = '<svg viewBox="0 0 24 24"><path d="M15.2 3.8 6.9 12l8.3 8.2 2.1-2.1L11.1 12l6.2-6.1z"/></svg>';
   var NEXT = '<svg viewBox="0 0 24 24"><path d="M8.8 3.8 6.7 5.9 12.9 12l-6.2 6.1 2.1 2.1L17.1 12z"/></svg>';
@@ -393,14 +395,12 @@
       track.style.transform = 'translateX(' + (-current * 100) + '%)';
       groups.forEach(function (group, position) {
         group.selected = position === current;
-        if (Math.abs(position - current) > 1) group.unload();
+        if (Math.abs(position - current) > 2) group.unload();
         group.refresh();
       });
-      if (groups[current] && groups[current].loaded) {
-        [current - 1, current + 1].forEach(function (position) {
-          if (groups[position]) groups[position].load();
-        });
-      }
+      [current - 1, current + 1].forEach(function (position) {
+        if (groups[position]) groups[position].load();
+      });
       if (accents[current]) carousel.style.setProperty('--accent', accents[current]);
       dots.querySelectorAll('.dot').forEach(function (dot, position) {
         dot.classList.toggle('active', position === current);
@@ -543,6 +543,48 @@
 
   var allGroups = [];
 
+  function prefetchAll() {
+    if (!window.fetch) return;
+    var link = navigator.connection;
+    if (link && (link.saveData || /(^|-)2g$/.test(link.effectiveType || ''))) return;
+
+    var queue = [];
+    var seen = {};
+    allGroups.forEach(function (group) {
+      group.videos.forEach(function (video) {
+        var source = video.dataset.src;
+        if (source && !seen[source]) {
+          seen[source] = true;
+          queue.push(source);
+        }
+      });
+    });
+
+    var index = 0;
+    var running = 0;
+
+    function pump() {
+      while (running < PREFETCH_LIMIT && index < queue.length) {
+        running++;
+        fetch(queue[index++], { cache: 'force-cache' })
+          .then(function (response) { return response.arrayBuffer(); })
+          .catch(function () {})
+          .then(function () {
+            running--;
+            pump();
+          });
+      }
+    }
+
+    function start() {
+      if (window.requestIdleCallback) window.requestIdleCallback(pump, { timeout: 3000 });
+      else pump();
+    }
+
+    if (document.readyState === 'complete') setTimeout(start, PREFETCH_DELAY);
+    else window.addEventListener('load', function () { setTimeout(start, PREFETCH_DELAY); });
+  }
+
   function build() {
     var data = window.PAGE_DATA || {};
     var host = document.getElementById('sections');
@@ -576,7 +618,7 @@
         var group = entry.target.owner;
         if (entry.isIntersecting && group && group.selected) group.load();
       });
-    }, { rootMargin: '400px 0px' });
+    }, { rootMargin: '1200px 0px' });
 
     allGroups.forEach(function (group) {
       group.root.owner = group;
@@ -590,6 +632,8 @@
         if (group.running) group.restart();
       });
     });
+
+    prefetchAll();
   }
 
   if (document.readyState === 'loading') {
