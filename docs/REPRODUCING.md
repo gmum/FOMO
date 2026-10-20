@@ -34,9 +34,10 @@ keyed by the prompt set and is already there:
 SKIP_BASE=1 bash slurm/run.sh experiments/objects_mapping1.yaml
 ```
 
-The two baseline rows train nothing, so they skip training by themselves. The
-SAFREE row additionally has no baseline of its own: it replaces the pipeline
-class, so the untouched model is not available in the same process.
+The two rows we compare against train nothing, so they skip training by
+themselves. The SAFREE row additionally has no baseline of its own: it
+replaces the pipeline class, so the untouched model is not available in the
+same process.
 
 Then, once the arrays are done:
 

@@ -49,7 +49,7 @@ def load_pipeline(model_path, safree=False):
     if safree:
         # A separate pipeline class, not a flag: it cannot share a process with
         # the stock one, which is why a SAFREE experiment generates no baseline.
-        from baselines.safree_pipeline import HunyuanVideoPipeline as Pipeline
+        from safree.pipeline import HunyuanVideoPipeline as Pipeline
     else:
         from diffusers import HunyuanVideoPipeline as Pipeline
 
@@ -205,7 +205,7 @@ def main():
     loaded = set()
     extra_static = {}
     if method == "safree":
-        from baselines.safree_concepts import CONCEPTS as SAFREE_TERMS
+        from safree.concepts import CONCEPTS as SAFREE_TERMS
     elif method == "negprompt":
         extra_static = dict(true_cfg_scale=sampling["guidance_scale"],
                             guidance_scale=1.0)

@@ -1,6 +1,6 @@
 # NegPrompt: the untouched model with the erased concept as a negative prompt.
-# A baseline row, not a method of ours -- it trains nothing, so the `train`
-# section is unused and there are no adapters.
+# A method we compare against, not one of ours -- it trains nothing, so the
+# `train` section is unused and there are no adapters.
 #
 # HunyuanVideo is CFG-distilled, so a negative prompt has no effect unless real
 # two-branch guidance is switched back on. The generator does that, which also

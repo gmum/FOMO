@@ -35,7 +35,7 @@ evaluation/
     arcface.py                ArcFace against reference photographs
     tables.py                 the LaTeX tables
 
-baselines/                    SAFREE's pipeline and its term lists
+safree/                       the vendored method FOMO is compared against
 slurm/                        env.sh, three sbatch scripts, and run.sh
 ```
 
