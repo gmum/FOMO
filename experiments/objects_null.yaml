@@ -1,0 +1,18 @@
+# Object erasure with no safe target: the concept is removed and nothing is put
+# in its place. Both the target concept and the target prompt are empty in the
+# table, which switches off localisation on the target side.
+#
+# This is the row that shows what redirection buys. Erasure is stronger without
+# a target, because the alignment has nothing to hold the scene to; the price
+# shows up in the preservation column.
+name: objects_null
+kind: objects
+label: FOMO (Null)
+
+prompts: imagenette
+mappings: experiments/mappings/imagenette.tsv
+mapping: "null"
+
+train:
+  max_train_steps: 250
+  checkpoint: checkpoint-000250

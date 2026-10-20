@@ -1,0 +1,15 @@
+# Object erasure, Safe Mapping 2 -- the configuration the main object table of
+# the paper reports. Ten Imagenette classes, each redirected towards a target
+# from a different part of the label space than Safe Mapping 1, so the two
+# together say whether the method depends on the target being close by.
+name: objects_mapping2
+kind: objects
+label: FOMO (Safe Mapping 2)
+
+prompts: imagenette
+mappings: experiments/mappings/imagenette.tsv
+mapping: mapping2
+
+train:
+  max_train_steps: 250
+  checkpoint: checkpoint-000250

@@ -1,0 +1,17 @@
+# SAFREE: training-free erasure through the text embedding, run on its own fork
+# of the HunyuanVideo pipeline. A baseline row; it trains nothing.
+#
+# The pipeline class is replaced rather than configured, so this experiment
+# cannot generate a baseline of its own -- the untouched model is not available
+# in the same process. Generate that from one of the fomo experiments on the
+# same prompt set; it is shared.
+#
+# The per-concept term lists SAFREE needs live in baselines/safree_concepts.py.
+name: objects_safree
+kind: objects
+method: safree
+label: SAFREE
+
+prompts: imagenette
+mappings: experiments/mappings/imagenette.tsv
+mapping: mapping2

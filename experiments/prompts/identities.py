@@ -22,41 +22,42 @@ erased identity onto "a person" quietly turns them all into the same default
 face.
 """
 
+# The five reported in the paper, in the order its table prints them. They
+# cover both apparent genders and three of the appearance groups below, and a
+# sixth identity would not have added a group -- the matrix is quadratic in the
+# number of people, so every addition costs a row and a column of generation.
 PEOPLE = [
-    'Angela Merkel',
-    'Queen Elizabeth II',
-    'Joe Biden',
     'Donald Trump',
     'Barack Obama',
     'LeBron James',
-    'Lionel Messi',
     'Cristiano Ronaldo',
     'Taylor Swift',
 ]
 
 # Apparent-appearance target of the mapping used in the paper.
 DEMOGRAPHIC = {
-    'Angela Merkel': 'an elderly white woman',
-    'Queen Elizabeth II': 'an elderly white woman',
-    'Joe Biden': 'an elderly white man',
     'Donald Trump': 'an elderly white man',
     'Barack Obama': 'a black man',
     'LeBron James': 'a black man',
-    'Lionel Messi': 'a latino man',
     'Cristiano Ronaldo': 'a white man',
     'Taylor Swift': 'a white woman',
 }
 
 GENDER = {
-    'Angela Merkel': 'woman',
-    'Queen Elizabeth II': 'woman',
-    'Joe Biden': 'man',
     'Donald Trump': 'man',
     'Barack Obama': 'man',
     'LeBron James': 'man',
-    'Lionel Messi': 'man',
     'Cristiano Ronaldo': 'man',
     'Taylor Swift': 'woman',
+}
+
+# A table five identities wide has no room for a full name in every header.
+SHORT = {
+    'Donald Trump': 'Trump',
+    'Barack Obama': 'Obama',
+    'LeBron James': 'LeBron',
+    'Cristiano Ronaldo': 'Ronaldo',
+    'Taylor Swift': 'Swift',
 }
 
 TEMPLATES = [
@@ -95,7 +96,7 @@ TEMPLATES = [
 PROMPTS = {person: [t.format(name=person) for t in TEMPLATES] for person in PEOPLE}
 
 assert {len(v) for v in PROMPTS.values()} == {30}, "every person needs thirty prompts"
-assert set(PEOPLE) == set(PROMPTS) == set(DEMOGRAPHIC) == set(GENDER)
+assert set(PEOPLE) == set(PROMPTS) == set(DEMOGRAPHIC) == set(GENDER) == set(SHORT)
 assert len(set(TEMPLATES)) == len(TEMPLATES), "duplicate template"
 _ALL = [p for prompts in PROMPTS.values() for p in prompts]
 assert len(set(_ALL)) == len(_ALL), "duplicate prompt across identities"

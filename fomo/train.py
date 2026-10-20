@@ -5,7 +5,6 @@ import copy
 import json
 import random
 import re
-import sys
 from contextlib import contextmanager
 from dataclasses import dataclass
 from math import prod
@@ -22,17 +21,7 @@ from diffusers.utils import export_to_video
 from peft.utils import get_peft_model_state_dict
 from tqdm.auto import tqdm
 
-IMAP_REPO_DIR = Path(__file__).resolve().parents[2] / "IMAP"
-if IMAP_REPO_DIR.exists():
-    sys.path.insert(0, str(IMAP_REPO_DIR))
-
 from fomo.localization import DEFAULT_IMAP_DOUBLE_BLOCKS, gramcol_soft_mask
-try:
-    from imap.imap_utils import select_head as _imap_select_head
-except ModuleNotFoundError as error:
-    if error.name not in ("sklearn", "imap"):
-        raise
-    _imap_select_head = None
 from fomo.lora import (
     DEFAULT_HUNYUAN_ERASE_TARGET_MODULES,
     add_hunyuan_erase_lora,
@@ -201,25 +190,17 @@ def select_motion_heads(
     sep_score: str,
     topk: int,
 ) -> torch.Tensor:
-    """Select motion heads like IMAP; fallback implements CHI without sklearn."""
-    frames, grid_height, grid_width = grid
-    if _imap_select_head is not None:
-        return _imap_select_head(
-            hidden_state=hidden_state,
-            text_seq_length=text_seq_length,
-            F=frames,
-            H=grid_height,
-            W=grid_width,
-            sep_score=sep_score,
-            topk=topk,
-            text_seq_back=True,
-        )
+    """Rank heads by how separable their tokens are across frames.
 
+    A head whose per-frame token clouds sit far apart relative to their own
+    spread is reading time rather than appearance, which is where a motion
+    concept lives. The score is Calinski-Harabasz over the frames, computed
+    directly: the clustering is given, so there is nothing to fit.
+    """
+    frames, grid_height, grid_width = grid
     if sep_score.strip().lower() != "chi":
-        raise ModuleNotFoundError(
-            "scikit-learn is required for IMAP head selection metrics other than CHI. "
-            "Use MOTION_SEP_SCORE=CHI or install scikit-learn."
-        )
+        raise ValueError("Only the CHI separability score is implemented, got %r."
+                         % sep_score)
     if hidden_state.ndim != 3:
         raise ValueError(f"hidden_state must be [heads, tokens, dim], got {tuple(hidden_state.shape)}")
     num_heads, total_tokens, dim = hidden_state.shape

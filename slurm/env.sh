@@ -1,25 +1,44 @@
 #!/bin/bash
 # =============================================================================
-# Activate the project's conda environment, or stop the job immediately.
+# Everything every job needs: the repository root, the caches, and an activated
+# conda environment -- or an immediate stop with a readable reason.
 #
-#   source benchmark/env.sh          # sourced, never executed
+#   source slurm/env.sh          # sourced, never executed
 #
-# A job must not depend on the submitting shell having the right variables
-# exported. Treating an unset CONDA_SH as "fall back to the system python"
-# means the job is allocated a GPU, spends a minute starting up, and dies on
-# `import torch` — with the real cause several screens above the traceback.
-# Here the environment is located by search, and a failure to find it ends the
-# job at once with a message naming everything that was tried.
+# A job must not depend on the submitting shell having exported the right
+# things. Treating an unset CONDA_SH as "fall back to the system python" means
+# the job is allocated a GPU, spends a minute starting up, and dies on
+# `import torch` with the real cause several screens above the traceback. Here
+# the environment is located by search and a failure names everything tried.
 #
-# Overrides, both optional:
+# Overrides, all optional:
+#   REPO_DIR   repository root (default: the parent of this file)
 #   CONDA_SH   path to conda.sh, tried first
-#   ENV_NAME   environment name (default: eraser)
+#   ENV_NAME   conda environment name (default: fomo)
 #
 # Provides:
 #   require_modules <name> ...      exit non-zero unless every module imports
 # =============================================================================
 
-ENV_NAME="${ENV_NAME:-eraser}"
+REPO_DIR="${REPO_DIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
+export REPO_DIR
+cd "$REPO_DIR"
+
+export PYTHONPATH="$REPO_DIR${PYTHONPATH:+:$PYTHONPATH}"
+export HF_HOME="${HF_HOME:-$REPO_DIR/.cache/huggingface}"
+export HF_HUB_CACHE="$HF_HOME/hub"
+export TORCH_HOME="${TORCH_HOME:-$REPO_DIR/.cache/torch}"
+export INSIGHTFACE_HOME="${INSIGHTFACE_HOME:-$REPO_DIR/.cache/insightface}"
+export TMPDIR="${TMPDIR:-$REPO_DIR/.cache/tmp}"
+export PYTHONNOUSERSITE=1
+export PYTHONUNBUFFERED=1
+export TOKENIZERS_PARALLELISM=false
+# Without this the allocator fragments on long runs and a job that fits reports
+# an out-of-memory error with gigabytes reserved and unused.
+export PYTORCH_CUDA_ALLOC_CONF="${PYTORCH_CUDA_ALLOC_CONF:-expandable_segments:True}"
+mkdir -p "$REPO_DIR/logs" "$TMPDIR" "$TORCH_HOME"
+
+ENV_NAME="${ENV_NAME:-fomo}"
 
 # Ordered from most to least authoritative: an explicit override, an already
 # initialised conda, then the usual install locations.
@@ -33,9 +52,7 @@ _conda_sh_candidates() {
     if command -v conda > /dev/null 2>&1; then
         local base
         base="$(conda info --base 2> /dev/null || true)"
-        if [ -n "$base" ]; then
-            printf '%s\n' "$base/etc/profile.d/conda.sh"
-        fi
+        [ -n "$base" ] && printf '%s\n' "$base/etc/profile.d/conda.sh"
     fi
     # Unset or non-existent roots are skipped rather than listed, so the error
     # message stays readable.
@@ -52,7 +69,7 @@ _activate_env() {
     local candidate
     while IFS= read -r candidate; do
         [ -n "$candidate" ] && [ -f "$candidate" ] || continue
-        # conda.sh and the activation hooks reference unset variables, so -u
+        # conda.sh and its activation hooks reference unset variables, so -u
         # has to come off around them.
         set +u
         if . "$candidate" > /dev/null 2>&1 && conda activate "$ENV_NAME" 2> /dev/null; then
@@ -79,6 +96,7 @@ if ! _activate_env; then
 fi
 
 echo "env: python $(python3 -c 'import sys; print(sys.version.split()[0])') at $(command -v python3)"
+echo "env: repo $REPO_DIR"
 
 # Checked with find_spec rather than a real import: importing torch costs about
 # twenty seconds and the point here is only to catch the wrong interpreter.
@@ -89,14 +107,21 @@ import sys
 
 missing = [name for name in sys.argv[1:] if importlib.util.find_spec(name) is None]
 if missing:
-    sys.stderr.write(
-        "ERROR: missing from the active environment: %s\n"
-        "       interpreter: %s\n" % (", ".join(missing), sys.executable))
+    sys.stderr.write("ERROR: missing from the active environment: %s\n"
+                     "       interpreter: %s\n"
+                     % (", ".join(missing), sys.executable))
     sys.exit(1)
 PY
     then
-        echo "The environment is active but incomplete — install the missing" >&2
+        echo "The environment is active but incomplete -- install the missing" >&2
         echo "packages, or point ENV_NAME at the environment that has them." >&2
         exit 1
     fi
+}
+
+# Loads one experiment file into EXP_* and TRAIN_*/GEN_* variables.
+load_experiment() {
+    local config="$1"
+    [ -f "$config" ] || { echo "ERROR: no such experiment: $config" >&2; exit 2; }
+    eval "$(python3 -m experiments.config "$config" --shell)"
 }

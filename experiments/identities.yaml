@@ -1,0 +1,26 @@
+# Public figures: five identities, each redirected onto a coarse description of
+# how the face reads on screen rather than onto another person.
+#
+# Six training steps, against two hundred and fifty for objects. A face is a
+# narrower thing to move than a class of objects, and the identity collapses
+# long before the scene does -- training further keeps lowering the erased
+# identity at a cost to the other four that is not worth paying.
+#
+# Thirty prompts per person, identical but for the name, so framing is not a
+# per-person variable: a footballer described on a pitch arrives at the face
+# detector a dozen pixels wide, which reads as erasure and is not.
+name: identities
+kind: identities
+label: FOMO
+
+prompts: identities
+mappings: experiments/mappings/identities.tsv
+mapping: demographic
+
+train:
+  max_train_steps: 6
+  checkpointing_steps: 1
+  checkpoint: checkpoint-000006
+
+sampling:
+  num_prompts: 30

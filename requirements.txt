@@ -1,0 +1,26 @@
+# Install torch and torchvision first, separately: the right index depends on
+# the platform. On aarch64 (for example GH200) the cu124 index stops at 2.5.1,
+# so 2.6.0 has to come from cu126.
+#
+#   pip install torch==2.6.0 torchvision==0.21.0 \
+#       --index-url https://download.pytorch.org/whl/cu126
+#   pip install -r requirements.txt
+
+# Method and sampling
+diffusers==0.33.1
+transformers==4.48.0
+accelerate==1.1.0
+peft==0.14.0
+numpy==2.2.6
+tqdm
+imageio
+imageio-ffmpeg
+
+# Experiment files
+pyyaml
+
+# Identity evaluation: the face detector and ArcFace. There is no aarch64 GPU
+# wheel of onnxruntime, so on an ARM cluster this runs on CPU unless the
+# package is built locally; the scoring is cheap enough either way.
+insightface
+onnxruntime
