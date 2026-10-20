@@ -6,7 +6,7 @@
 # in the same process. Generate that from one of the fomo experiments on the
 # same prompt set; it is shared.
 #
-# The per-concept term lists SAFREE needs live in safree/concepts.py.
+# The per-concept term lists SAFREE needs live in methods/safree/concepts.py.
 name: objects_safree
 kind: objects
 method: safree

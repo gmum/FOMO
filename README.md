@@ -4,13 +4,20 @@ The published code is on `main`, together with its README. This branch adds
 what is needed to reproduce the object and public-figure experiments: the
 evaluation prompts, the mapping tables, the metrics and the SLURM layer.
 
-- [docs/SETUP.md](docs/SETUP.md) — installation, running the trainer by hand
-- [docs/REPRODUCING.md](docs/REPRODUCING.md) — paper table to command, and how to read the metrics
+- [docs/SETUP.md](docs/SETUP.md) — installation and the GPU memory flags
+- [docs/USAGE.md](docs/USAGE.md) — structure and what to run
 
 ```bash
-DRY=1 bash slurm/run.sh experiments/objects_mapping2.yaml   # look first
-bash slurm/run.sh experiments/objects_mapping2.yaml         # train, generate, score
-python3 -m evaluation.tables experiments/objects_*.yaml --out tables/objects.tex
+# unlearn something
+python3 -m fomo.unlearn --concept dog --target cat --out adapters/unlearn_dog
+
+# look at one video
+python3 -m fomo.sample --prompt "a video of a dog" --out after.mp4 \
+    --adapter adapters/unlearn_dog
+
+# reproduce one row of a table, or one concept of it
+bash slurm/reproduce_experiment.sh experiments/objects_mapping2.yaml
+CONCEPT=church bash slurm/reproduce_experiment.sh experiments/objects_mapping2.yaml
 ```
 
 ## Layout
@@ -18,6 +25,8 @@ python3 -m evaluation.tables experiments/objects_*.yaml --out tables/objects.tex
 ```
 fomo/                         the method
     train.py                  training loop and losses
+    unlearn.py                unlearn one concept, short flags
+    sample.py                 one video, with or without an adapter
     localization.py           the concept mask
     lora.py                   adapter placement for HunyuanVideo
     flow.py tokens.py attention.py
@@ -33,19 +42,20 @@ experiments/                  one file per block of results in the paper
 evaluation/
     resnet.py                 ResNet-50 over every frame; ESR and PSR
     arcface.py                ArcFace against reference photographs
-    tables.py                 the LaTeX tables
 
-safree/                       the vendored method FOMO is compared against
-slurm/                        env.sh, three sbatch scripts, and run.sh
+methods/                      the methods FOMO is compared against
+    negprompt.py
+    safree/                   its own fork of the HunyuanVideo pipeline
+slurm/                        env.sh, three sbatch scripts, reproduce_experiment.sh
 ```
 
 Every entry point is a module, run from the repository root:
-`python3 -m fomo.train`, `python3 -m experiments.generate`,
-`python3 -m evaluation.tables`.
+`python3 -m fomo.unlearn`, `python3 -m experiments.generate`,
+`python3 -m evaluation.resnet`.
 
-Adapters, videos, results and tables are written under `adapters/`, `videos/`,
-`results/` and `tables/`, all ignored by git. So is `data/`, which is where the
-reference photographs for the identity metric go; they are not distributed.
+Adapters, videos and results are written under `adapters/`, `videos/` and
+`results/`, all ignored by git. So is `data/`, which is where the reference
+photographs for the identity metric go; they are not distributed.
 
 ## What is not here
 

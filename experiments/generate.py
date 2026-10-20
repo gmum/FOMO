@@ -35,59 +35,7 @@ import time
 
 from experiments import config as expconfig
 from experiments import layout
-
-
-def load_pipeline(model_path, safree=False):
-    """The text-to-video pipeline on the GPU.
-
-    Imported here rather than at module scope so that --dry-run and --help work
-    in an environment without torch, such as a login node.
-    """
-    import torch
-    from diffusers import HunyuanVideoTransformer3DModel
-
-    if safree:
-        # A separate pipeline class, not a flag: it cannot share a process with
-        # the stock one, which is why a SAFREE experiment generates no baseline.
-        from safree.pipeline import HunyuanVideoPipeline as Pipeline
-    else:
-        from diffusers import HunyuanVideoPipeline as Pipeline
-
-    transformer = HunyuanVideoTransformer3DModel.from_pretrained(
-        model_path, subfolder="transformer", torch_dtype=torch.bfloat16)
-    pipe = Pipeline.from_pretrained(
-        model_path, transformer=transformer, torch_dtype=torch.float16)
-    pipe.vae.enable_tiling()
-    pipe.to("cuda")
-    return pipe
-
-
-def resolve_adapter(path, checkpoint=None):
-    """A directory holding LoRA weights.
-
-    Accepts the weight directory itself, or a parent holding checkpoint-*, in
-    which case `checkpoint` picks one and the newest is used without it.
-    Pinning matters: generating step 100 and then step 250 into the same place
-    would silently keep the first, because existing files are skipped.
-    """
-    names = ("pytorch_lora_weights.safetensors", "pytorch_lora_weights.bin")
-
-    def has_weights(directory):
-        return any(os.path.isfile(os.path.join(directory, n)) for n in names)
-
-    if checkpoint:
-        pinned = os.path.join(path, checkpoint)
-        if not has_weights(pinned):
-            raise SystemExit("No LoRA weights in %s" % pinned)
-        return pinned
-    if has_weights(path):
-        return path
-    found = sorted(os.path.join(path, d) for d in os.listdir(path)
-                   if d.startswith("checkpoint-")
-                   and has_weights(os.path.join(path, d)))
-    if not found:
-        raise SystemExit("No LoRA weights under %s" % path)
-    return found[-1]
+from fomo.sample import load_pipeline, resolve_adapter
 
 
 def plan(cfg, base, erased, subjects_wanted, root="videos"):
@@ -203,12 +151,10 @@ def main():
     pipe = load_pipeline(sampling["model_path"], safree=(method == "safree"))
 
     loaded = set()
-    extra_static = {}
     if method == "safree":
-        from safree.concepts import CONCEPTS as SAFREE_TERMS
+        from methods.safree.concepts import CONCEPTS as SAFREE_TERMS
     elif method == "negprompt":
-        extra_static = dict(true_cfg_scale=sampling["guidance_scale"],
-                            guidance_scale=1.0)
+        from methods.negprompt import sampling_kwargs
 
     started, done, total = time.time(), 0, sum(
         len(expconfig.prompts_for(cfg, s)) for _, _, s in work)
@@ -226,7 +172,7 @@ def main():
             pipe.set_adapters([name], adapter_weights=[args.lora_weight])
             extra = dict(guidance_scale=sampling["guidance_scale"])
         elif method == "negprompt":
-            extra = dict(extra_static, negative_prompt=erased)
+            extra = sampling_kwargs(erased, sampling["guidance_scale"])
         elif method == "safree":
             if erased not in SAFREE_TERMS:
                 raise SystemExit("No SAFREE term list for %r" % erased)

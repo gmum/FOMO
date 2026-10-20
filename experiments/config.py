@@ -122,7 +122,7 @@ def load(path):
         # This module is read on the submitting host as well as inside the
         # jobs, and on a cluster whose login node has a different architecture
         # from its compute nodes the conda environment cannot run there at all.
-        # Saying so beats a traceback from `bash slurm/run.sh`.
+        # Saying so beats a traceback from `bash slurm/reproduce_experiment.sh`.
         raise SystemExit(
             "PyYAML is missing from %s.\n"
             "It is needed wherever an experiment file is read, which includes "

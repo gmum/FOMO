@@ -13,7 +13,6 @@ The tree, with `videos_root` and friends overridable but defaulted:
     results/<prompts>/base/per_class.csv
     results/<experiment>/<erased>/per_class.csv
     results/<experiment>/id_similarity.csv
-    tables/<experiment>.tex
 
 A column is named after the concept it erases, and `base` is the column that
 erases nothing. Both hold the same thing underneath -- one directory per
@@ -70,6 +69,3 @@ def column_results(experiment, erased, root="results"):
 def experiment_results(experiment, root="results"):
     return os.path.join(root, experiment)
 
-
-def table_path(experiment, root="tables"):
-    return os.path.join(root, "%s.tex" % experiment)

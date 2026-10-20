@@ -207,8 +207,76 @@ def write_csv(path, rows):
         writer.writerows(rows)
 
 
+def mean_std(values):
+    if not values:
+        return None, None
+    mean = sum(values) / len(values)
+    if len(values) < 2:
+        return mean, 0.0
+    return mean, (sum((v - mean) ** 2 for v in values) / len(values)) ** 0.5
+
+
+def report(cfg, people, short, results_root, decimals=4):
+    """Print Original, Erase and Preserve from the per-video CSV.
+
+    Reads back what the scoring job wrote, so it costs nothing and can be run
+    while the job is still going -- it will simply show fewer videos behind
+    each cell.
+
+    Preserve is indexed by the identity that was erased, not by the identity
+    that was generated: the question a column answers is what that model did to
+    everybody else.
+    """
+    path = os.path.join(layout.experiment_results(cfg["name"], root=results_root),
+                        "id_similarity_per_video.csv")
+    if not os.path.exists(path):
+        raise SystemExit("Nothing scored yet: %s does not exist." % path)
+
+    wanted = set(people)
+    buckets = {}
+    with open(path, newline="", encoding="utf-8") as handle:
+        for row in csv.DictReader(handle):
+            if not row["id_sim"] or row["person"] not in wanted:
+                continue
+            value = float(row["id_sim"])
+            erased, person = row["erased"], row["person"]
+            if erased == "none":
+                key = ("Original", person)
+            elif erased in wanted:
+                key = ("Erase", person) if erased == person else ("Preserve", erased)
+            else:
+                continue
+            buckets.setdefault(key, []).append(value)
+
+    fmt = "%%.%df" % decimals
+    header = "%-10s" % "" + "".join("%12s" % short.get(p, p) for p in people)
+    print("=" * len(header + " " * 20))
+    print(cfg["label"])
+    print("-" * len(header + " " * 20))
+    print(header + "%20s" % "AVG")
+    for name in ("Original", "Erase", "Preserve"):
+        cells, pooled = [], []
+        for person in people:
+            values = buckets.get((name, person), [])
+            pooled.extend(values)
+            cells.append(mean_std(values)[0])
+        avg, std = mean_std(pooled)
+        print("%-10s" % name
+              + "".join("%12s" % ("----" if c is None else fmt % c) for c in cells)
+              + "%20s" % ("----" if avg is None
+                          else (fmt % avg) + " +/- " + (fmt % std)))
+    print("-" * len(header + " " * 20))
+    print("Original is the untouched model asked for that person -- the ceiling.")
+    print("Erase is the model that removed them, asked again; lower is better.")
+    print("Preserve is that same model asked for the others; higher is better.")
+    print("The spread is over videos, not over identities: averaging the")
+    print("per-identity means first gives almost zero and says nothing about how")
+    print("unevenly the metric behaves. A difference below it is not a difference.")
+
+
 def main():
-    ap = argparse.ArgumentParser(description="ArcFace ID-similarity over a column tree.")
+    ap = argparse.ArgumentParser(
+        description="ArcFace ID-similarity over a column tree.")
     ap.add_argument("config")
     ap.add_argument("--refs-dir", default="data/identity_refs")
     ap.add_argument("--videos-root", default="videos")
@@ -230,6 +298,8 @@ def main():
     ap.add_argument("--list", action="store_true", help="Print the cells and exit.")
     ap.add_argument("--check-refs", action="store_true",
                     help="Embed the photographs, report their agreement, exit.")
+    ap.add_argument("--report", action="store_true",
+                    help="Score nothing; print the numbers already on disk.")
     args = ap.parse_args()
 
     cfg = expconfig.load(args.config)
@@ -237,6 +307,11 @@ def main():
         raise SystemExit("%s is a %s experiment; objects are scored with "
                          "evaluation.resnet." % (args.config, cfg["kind"]))
     people = expconfig.subjects(cfg)
+
+    if args.report:
+        module = expconfig.prompt_module(cfg)
+        report(cfg, people, getattr(module, "SHORT", {}), args.results_root)
+        return
 
     if args.check_refs:
         app = load_analyser(args.model, args.det_size)

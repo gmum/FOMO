@@ -44,6 +44,16 @@ load_experiment "$CONFIG"
 
 IDX="${SLURM_ARRAY_TASK_ID:-0}"
 
+# REPORT=1 scores nothing: it reads back what the scoring jobs wrote and prints
+# the finished rows, so the numbers end up in a log rather than waiting to be
+# asked for. Needs no GPU and no heavy imports.
+if [ "${REPORT:-0}" = "1" ]; then
+    if [ "$EXP_KIND" = "identities" ]; then
+        exec python3 -m evaluation.arcface "$CONFIG" --report
+    fi
+    exec python3 -m evaluation.resnet "$CONFIG" --report
+fi
+
 if [ "$EXP_KIND" = "identities" ]; then
     require_modules insightface onnxruntime
     echo "task $IDX | ArcFace over $EXP_NAME"

@@ -2,7 +2,6 @@
 adapters/
 videos/
 results/
-tables/
 logs/
 
 # Reference photographs for the identity metric, and anything else local.

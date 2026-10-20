@@ -162,13 +162,113 @@ def write_results(output_dir, stats, rows, erased, classes):
     return summary
 
 
+def read_per_class(path):
+    """{concept: (top1, top5)} from one per_class.csv."""
+    table = {}
+    with open(path, newline="", encoding="utf-8") as handle:
+        for row in csv.DictReader(handle):
+            table[row["concept"]] = (float(row["top1_acc"]), float(row["top5_acc"]))
+    return table
+
+
+def cells_from(table, classes, erased=None):
+    """ESR and PSR for one column, or for every column from a shared table.
+
+    With `erased` given this is one cell. Without it the whole row is derived
+    from a single set of accuracies, which is valid only when the videos do not
+    depend on the column -- that is, for the untouched model, where there is
+    one set of two hundred videos and ten ways of slicing it.
+    """
+    present = [c for c in classes if c in table]
+    out = {}
+    for target in ([erased] if erased else present):
+        if target not in table:
+            continue
+        others = [c for c in present if c != target]
+        if not others:
+            continue
+        out[target] = {
+            "ESR-1": 1.0 - table[target][0],
+            "ESR-5": 1.0 - table[target][1],
+            "PSR-1": sum(table[c][0] for c in others) / len(others),
+            "PSR-5": sum(table[c][1] for c in others) / len(others),
+        }
+    return out
+
+
+def report(cfg, classes, order, results_root):
+    """Print the finished numbers for one experiment, plus the baseline.
+
+    Reads back what the scoring jobs wrote, so it costs nothing and can be run
+    as often as you like while an array is still finishing. Anything missing is
+    named rather than quietly left out of the average: a row computed from an
+    incomplete set is not comparable with a complete one.
+    """
+    blocks = []
+
+    path = os.path.join(layout.base_results(cfg["prompts"], root=results_root),
+                        "per_class.csv")
+    if os.path.exists(path):
+        blocks.append(("HunyuanVideo (untouched)",
+                       cells_from(read_per_class(path), classes), []))
+    else:
+        blocks.append(("HunyuanVideo (untouched)", {},
+                       ["the whole baseline (no %s)" % path]))
+
+    cells, missing = {}, []
+    for row in expconfig.rows(cfg):
+        path = os.path.join(
+            layout.column_results(cfg["name"], row.concept, root=results_root),
+            "per_class.csv")
+        if not os.path.exists(path):
+            missing.append("%s (no %s)" % (row.concept, path))
+            continue
+        got = cells_from(read_per_class(path), classes, erased=row.concept)
+        if got:
+            cells.update(got)
+        else:
+            missing.append("%s (its own class absent from %s)" % (row.concept, path))
+    blocks.append((cfg["label"], cells, missing))
+
+    metrics = ("ESR-1", "ESR-5", "PSR-1", "PSR-5")
+    for label, cells, missing in blocks:
+        avg = {}
+        for metric in metrics:
+            values = [c[metric] for c in cells.values() if metric in c]
+            avg[metric] = sum(values) / len(values) if values else None
+        print("=" * 78)
+        print("%s   (%d of %d columns)" % (label, len(cells), len(order)))
+        print("-" * 78)
+        print("%18s | %7s %7s | %7s %7s"
+              % ("erased concept", "ESR-1", "ESR-5", "PSR-1", "PSR-5"))
+        for concept in order:
+            cell = cells.get(concept)
+            if not cell:
+                print("%18s |    ----    ---- |    ----    ----" % concept)
+                continue
+            print("%18s | %7.2f %7.2f | %7.2f %7.2f"
+                  % (concept, cell["ESR-1"] * 100, cell["ESR-5"] * 100,
+                     cell["PSR-1"] * 100, cell["PSR-5"] * 100))
+        print("-" * 78)
+        shown = ["   ----" if avg[m] is None else "%7.2f" % (avg[m] * 100)
+                 for m in metrics]
+        print("%18s | %s %s | %s %s" % tuple(["AVG"] + shown))
+        if missing:
+            print("\nMISSING (%d) -- AVG is not comparable:" % len(missing))
+            for item in missing:
+                print("   %s" % item)
+        print()
+
+
 def main():
-    ap = argparse.ArgumentParser(description="Score one object column.")
+    ap = argparse.ArgumentParser(description="Score one object column, or report the numbers.")
     ap.add_argument("config")
     ap.add_argument("--erased", default=None,
                     help="The column to score. Omit with --base.")
     ap.add_argument("--base", action="store_true",
                     help="Score the untouched model instead of a column.")
+    ap.add_argument("--report", action="store_true",
+                    help="Score nothing; print the numbers already on disk.")
     ap.add_argument("--videos-root", default="videos")
     ap.add_argument("--results-root", default="results")
     ap.add_argument("--output-dir", default=None,
@@ -181,11 +281,15 @@ def main():
     if cfg["kind"] != "objects":
         raise SystemExit("%s is a %s experiment; identities are scored with "
                          "evaluation.arcface." % (args.config, cfg["kind"]))
-    if args.base == bool(args.erased):
-        raise SystemExit("Pass either --base or --erased <concept>.")
 
     module = expconfig.prompt_module(cfg)
     classes = list(module.CLASSES)
+
+    if args.report:
+        report(cfg, classes, list(module.TABLE_ORDER), args.results_root)
+        return
+    if args.base == bool(args.erased):
+        raise SystemExit("Pass either --base, --erased <concept> or --report.")
 
     if args.base:
         column = layout.base_videos(cfg["prompts"], root=args.videos_root)
