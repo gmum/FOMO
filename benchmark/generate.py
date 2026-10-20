@@ -38,7 +38,8 @@ import torch
 from diffusers.utils import export_to_video
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from safree_concepts import CONCEPTS as SAFREE_CONCEPTS  # noqa: E402
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from baselines.safree_concepts import CONCEPTS as SAFREE_CONCEPTS  # noqa: E402
 from common import (  # noqa: E402
     CLASS_SETS, IMAGENET_INDEX, MODEL_DEFAULTS, MODEL_FAMILIES,
     all_prompt_sets, prompts_for, slugify,
@@ -84,7 +85,7 @@ def load_safree_pipeline(model_path):
     root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     if root not in sys.path:
         sys.path.insert(0, root)
-    from safree_hunyuan_pipeline import HunyuanVideoPipeline as SafreePipeline
+    from baselines.safree_pipeline import HunyuanVideoPipeline as SafreePipeline
 
     transformer = HunyuanVideoTransformer3DModel.from_pretrained(
         model_path, subfolder="transformer", torch_dtype=torch.bfloat16)

@@ -160,7 +160,7 @@ echo "  skip_eval $SKIP_EVAL"
 echo "  output : $OUTPUT_DIR"
 
 CMD=(
-    python train_hunyuan_imap_h_lora.py
+    python -m fomo.train
     --model_path "${MODEL_PATH:-hunyuanvideo-community/HunyuanVideo}"
     --output_dir "$OUTPUT_DIR"
     --source_concept "$CONCEPT"

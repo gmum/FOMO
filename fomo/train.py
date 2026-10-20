@@ -22,25 +22,25 @@ from diffusers.utils import export_to_video
 from peft.utils import get_peft_model_state_dict
 from tqdm.auto import tqdm
 
-IMAP_REPO_DIR = Path(__file__).resolve().parents[1] / "IMAP"
+IMAP_REPO_DIR = Path(__file__).resolve().parents[2] / "IMAP"
 if IMAP_REPO_DIR.exists():
     sys.path.insert(0, str(IMAP_REPO_DIR))
 
-from diagnose_hunyuan_imap_hidden_patch import DEFAULT_IMAP_DOUBLE_BLOCKS, gramcol_soft_mask
+from fomo.localization import DEFAULT_IMAP_DOUBLE_BLOCKS, gramcol_soft_mask
 try:
     from imap.imap_utils import select_head as _imap_select_head
 except ModuleNotFoundError as error:
-    if error.name != "sklearn":
+    if error.name not in ("sklearn", "imap"):
         raise
     _imap_select_head = None
-from receler.loras.hunyuan_peft_lora import (
+from fomo.lora import (
     DEFAULT_HUNYUAN_ERASE_TARGET_MODULES,
     add_hunyuan_erase_lora,
     iter_trainable_parameters,
     trainable_parameter_summary,
 )
-from receler.training.hunyuan_erase_losses import make_guidance, prepare_flow_timesteps
-from receler.training.token_utils import find_concept_token_indices
+from fomo.flow import make_guidance, prepare_flow_timesteps
+from fomo.tokens import find_concept_token_indices
 
 
 DEFAULT_PROMPT_PAIRS = (
