@@ -38,6 +38,27 @@ export TOKENIZERS_PARALLELISM=false
 export PYTORCH_CUDA_ALLOC_CONF="${PYTORCH_CUDA_ALLOC_CONF:-expandable_segments:True}"
 mkdir -p "$REPO_DIR/logs" "$TMPDIR" "$TORCH_HOME"
 
+# On a cluster with environment modules, start from a clean set and load CUDA.
+# Skipped silently where there is no module system. MODULES accepts several
+# names -- ArcFace scoring also wants cuDNN -- and MODULES= opts out entirely,
+# for a machine whose toolkit is simply on the path.
+#
+#   MODULES="CUDA/12.8.0 cuDNN/9.2.1.18-CUDA-12.8.0" sbatch ...
+MODULES="${MODULES-CUDA/12.8.0}"
+if type module > /dev/null 2>&1; then
+    module purge > /dev/null 2>&1 || true
+    if [ -n "$MODULES" ]; then
+        # Unquoted on purpose: several names are loaded in one call.
+        # shellcheck disable=SC2086
+        module load $MODULES || {
+            echo "ERROR: module load $MODULES failed. Set MODULES to the names" >&2
+            echo "your site uses, or MODULES= to skip loading any." >&2
+            exit 1
+        }
+        echo "env: modules $MODULES"
+    fi
+fi
+
 ENV_NAME="${ENV_NAME:-fomo}"
 
 # Ordered from most to least authoritative: an explicit override, an already

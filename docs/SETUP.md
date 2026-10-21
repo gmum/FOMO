@@ -39,20 +39,30 @@ not.
 
 ## The submitting host
 
-`slurm/env.sh` finds conda, activates `ENV_NAME` (default `fomo`), sets the
-caches, and stops a job with a readable message if the environment is missing
-rather than failing later on `import torch`.
+`slurm/env.sh` loads `MODULES` (default `CUDA/12.8.0`), finds conda, activates
+`ENV_NAME` (default `fomo`, a path works too), sets the caches, and stops a job
+with a readable message if any of that fails rather than dying later on
+`import torch`. All four are overridable:
+
+```bash
+export CONDA_SH=/path/to/conda/etc/profile.d/conda.sh
+export ENV_NAME=/path/to/conda/envs/some_env
+export MODULES="CUDA/12.8.0 cuDNN/9.2.1.18-CUDA-12.8.0"   # ArcFace wants cuDNN
+export HF_HOME=/path/with/space/huggingface
+```
 
 `slurm/reproduce_experiment.sh` runs on the host you submit from, which on
 some clusters is a different architecture from the compute nodes — on Helios
 the login node is x86 while the GH200 nodes are aarch64, so the conda
-environment will not run there at all. That host needs one package of its own:
+environment will not run there at all. That host needs PyYAML of its own;
+everything else the script touches is in the standard library.
 
 ```bash
-pip install --user pyyaml
+python3 -c "import yaml"        # on Helios this already passes
 ```
 
-Everything else that script touches is in the standard library.
+If it does not, and the login node has no `pip`, `python3 -m pip install --user
+pyyaml` or a `module load` of a newer python is the way in.
 
 ## Reference photographs
 
