@@ -32,6 +32,10 @@ cd "$HERE/.."
 
 DRY="${DRY:-0}"
 CONCEPT="${CONCEPT:-}"
+# Passed on through --export=ALL, so the jobs do not have to work out where the
+# repository is: a batch script is copied to the scheduler's spool directory
+# and cannot locate itself.
+export REPO_DIR="$PWD"
 
 eval "$(PYTHONPATH="$PWD" python3 -m experiments.config "$CONFIG" --shell)"
 N_ROWS=$(echo "$EXP_ROWS" | wc -w)

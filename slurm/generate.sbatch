@@ -37,8 +37,21 @@
 
 set -euo pipefail
 
+# Where the repository is. A batch script is copied to the scheduler's spool
+# directory before it runs, so it cannot locate itself: $BASH_SOURCE points at
+# the copy. SLURM_SUBMIT_DIR is the directory sbatch was called from, which is
+# the repository root for every documented way of submitting; REPO_DIR
+# overrides it for any other.
+REPO_DIR="${REPO_DIR:-${SLURM_SUBMIT_DIR:-$PWD}}"
+if [ ! -f "$REPO_DIR/slurm/env.sh" ]; then
+    echo "ERROR: no slurm/env.sh under REPO_DIR=$REPO_DIR." >&2
+    echo "Submit from the repository root, or pass it explicitly:" >&2
+    echo "  sbatch --export=ALL,REPO_DIR=/path/to/repo,... <script>" >&2
+    exit 2
+fi
+export REPO_DIR
 # shellcheck source=slurm/env.sh
-source "$(dirname "${BASH_SOURCE[0]}")/env.sh"
+source "$REPO_DIR/slurm/env.sh"
 require_modules torch diffusers
 
 : "${CONFIG:?set CONFIG=experiments/<name>.yaml}"
