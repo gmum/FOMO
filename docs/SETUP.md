@@ -104,4 +104,4 @@ have to. Dropping to `--height 432 --width 768` is the other way out.
 
 ## Next
 
-[USAGE.md](USAGE.md): structure, what to run, what lands where, file formats.
+[USAGE.md](USAGE.md): structure, what to run, what lands where.

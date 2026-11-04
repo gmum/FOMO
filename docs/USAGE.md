@@ -31,14 +31,18 @@ Install first: [SETUP.md](SETUP.md). Run everything from the repository root.
 │   ├── generate.sbatch
 │   ├── evaluate.sbatch
 │   └── reproduce_experiment.sh chains all stages
-├── docs/
-│
-├── data/                       reference photographs you supply
-├── adapters/                   trained adapters
-├── videos/                     generated video
-├── results/                    csv and json from scoring
-├── logs/                       slurm output
-└── .cache/
+└── docs/
+```
+
+Written when you run things, none of them in git:
+
+```
+data/        reference photographs you supply
+adapters/    trained adapters
+videos/      generated video
+results/     csv and json from scoring
+logs/        slurm output
+.cache/
 ```
 
 Everything for one family sits under one directory named after the prompt set,
@@ -82,14 +86,20 @@ only by the adapter.
 
 ## Reproduce one row of a table
 
+| in the paper | file |
+|---|---|
+| FOMO, Null mapping | `experiments/objects_null.yaml` |
+| FOMO, Safe Mapping 1 | `experiments/objects_mapping1.yaml` |
+| FOMO, Safe Mapping 2 | `experiments/objects_mapping2.yaml` |
+| public figures | `experiments/identities.yaml` |
+
 ```bash
 bash slurm/reproduce_experiment.sh experiments/objects_mapping2.yaml
 ```
 
 Baseline, training, generation and scoring, chained by dependency. `DRY=1` in
-front prints the `sbatch` lines without submitting anything. The other rows are
-the remaining files in `experiments/`; pass `SKIP_BASE=1` for the second and
-later rows on the same prompts, since they share the baseline.
+front prints the `sbatch` lines without submitting anything. Pass `SKIP_BASE=1`
+for the second and later object rows, since the three share one baseline.
 
 One concept of that row, all stages:
 
