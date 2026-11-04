@@ -53,8 +53,7 @@ def plan(cfg, base, erased, subjects_wanted, root="videos"):
             raise SystemExit("%r is not a subject of %s. Known: %s"
                              % (subject, cfg["prompts"], ", ".join(everyone)))
     if base:
-        return [(layout.base_videos(cfg["prompts"], root=root), None, s)
-                for s in chosen]
+        return [(layout.base_column(cfg["prompts"], root=root), None, s) for s in chosen]
 
     columns = [r.concept for r in expconfig.rows(cfg)]
     if erased:
@@ -62,7 +61,7 @@ def plan(cfg, base, erased, subjects_wanted, root="videos"):
             raise SystemExit("%r is not a column of %s. Columns: %s"
                              % (erased, cfg["name"], ", ".join(columns)))
         columns = [erased]
-    return [(layout.column_videos(cfg["name"], c, root=root), c, s)
+    return [(layout.unlearn_column(cfg["prompts"], c, root=root), c, s)
             for c in columns for s in chosen]
 
 
@@ -104,9 +103,12 @@ def main():
 
     sampling = cfg["sampling"]
     method = "base" if args.base else cfg["method"]
+    # The untouched model has no variants, so its videos carry no tag.
+    tag = None if args.base else cfg["tag"]
 
     print("experiment : %s (%s)" % (cfg["name"], cfg["kind"]))
     print("method     : %s" % method)
+    print("tag        : %s" % (tag or "(none, baseline)"))
     print("size       : %dx%d, %d frames, %d steps, gs %s"
           % (sampling["width"], sampling["height"], sampling["num_frames"],
              sampling["num_inference_steps"], sampling["guidance_scale"]))
@@ -115,8 +117,8 @@ def main():
 
     if args.dry_run:
         for column, erased, subject in work:
-            print("%s  (erased: %s)" % (layout.subject_videos(column, subject),
-                                        erased or "none"))
+            print("%s  (erased: %s)"
+                  % (layout.videos_in(column, subject, tag), erased or "none"))
             for index, prompt in enumerate(expconfig.prompts_for(cfg, subject)):
                 print("   %02d  %s" % (index, prompt))
         return
@@ -160,7 +162,7 @@ def main():
         len(expconfig.prompts_for(cfg, s)) for _, _, s in work)
 
     for column, erased, subject in work:
-        out_dir = layout.subject_videos(column, subject)
+        out_dir = layout.videos_in(column, subject, tag)
         os.makedirs(out_dir, exist_ok=True)
 
         if method == "fomo":

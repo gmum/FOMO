@@ -87,12 +87,12 @@ class Classifier(object):
         return top1, top5, preds
 
 
-def score_column(column_dir, classes, index, classifier, batch_size):
+def score_column(column_dir, classes, index, classifier, batch_size, tag=None):
     """{concept: [hits@1, hits@5, frames]} plus the per-frame rows."""
     stats = defaultdict(lambda: [0, 0, 0])
     rows = []
     for concept in classes:
-        directory = layout.subject_videos(column_dir, concept)
+        directory = layout.videos_in(column_dir, concept, tag)
         if not os.path.isdir(directory):
             continue
         for name in sorted(f for f in os.listdir(directory) if f.endswith(".mp4")):
@@ -218,7 +218,8 @@ def report(cfg, classes, order, results_root):
     cells, missing = {}, []
     for row in expconfig.rows(cfg):
         path = os.path.join(
-            layout.column_results(cfg["name"], row.concept, root=results_root),
+            layout.column_results(cfg["prompts"], row.concept, cfg["tag"],
+                                  root=results_root),
             "per_class.csv")
         if not os.path.exists(path):
             missing.append("%s (no %s)" % (row.concept, path))
@@ -292,14 +293,16 @@ def main():
         raise SystemExit("Pass either --base, --erased <concept> or --report.")
 
     if args.base:
-        column = layout.base_videos(cfg["prompts"], root=args.videos_root)
+        tag = None
+        column = layout.base_column(cfg["prompts"], root=args.videos_root)
         results = layout.base_results(cfg["prompts"], root=args.results_root)
     else:
         if args.erased not in classes:
             raise SystemExit("%r is not an Imagenette class." % args.erased)
-        column = layout.column_videos(cfg["name"], args.erased,
-                                      root=args.videos_root)
-        results = layout.column_results(cfg["name"], args.erased,
+        tag = cfg["tag"]
+        column = layout.unlearn_column(cfg["prompts"], args.erased,
+                                       root=args.videos_root)
+        results = layout.column_results(cfg["prompts"], args.erased, tag,
                                         root=args.results_root)
     results = args.output_dir or results
 
@@ -321,7 +324,7 @@ def main():
 
     classifier = Classifier(device)
     stats, rows = score_column(column, classes, module.INDEX,
-                               classifier, args.batch_size)
+                               classifier, args.batch_size, tag=tag)
     if not rows:
         raise SystemExit("No frames were classified under %s" % column)
 

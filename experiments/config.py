@@ -152,6 +152,11 @@ def load(path):
         "mappings": raw["mappings"],
         "mapping": raw["mapping"],
         "label": raw.get("label", raw["name"]),
+        # The innermost directory name, which is what distinguishes one run
+        # from another inside a column. For our own method that is the mapping
+        # it trains towards; for a method that trains nothing the mapping is
+        # read only to enumerate the columns, so its own name is what matters.
+        "tag": raw.get("tag", raw["mapping"] if method == "fomo" else method),
         "train": _merge(DEFAULTS["train"], raw.get("train"), path),
         "sampling": _merge(DEFAULTS["sampling"], raw.get("sampling"), path),
     }
@@ -220,7 +225,7 @@ def _shell(cfg):
     variable intact, and the sbatch scripts never need them.
     """
     flat = [("EXP_NAME", cfg["name"]), ("EXP_KIND", cfg["kind"]),
-            ("EXP_METHOD", cfg["method"]),
+            ("EXP_METHOD", cfg["method"]), ("EXP_TAG", cfg["tag"]),
             ("EXP_LABEL", cfg["label"]), ("EXP_PROMPTS", cfg["prompts"]),
             ("EXP_MAPPINGS", cfg["mappings"]), ("EXP_MAPPING", cfg["mapping"]),
             ("EXP_ROWS", " ".join(str(r.index) for r in rows(cfg))),
@@ -275,6 +280,7 @@ def main():
     print("name     : %s" % cfg["name"])
     print("kind     : %s" % cfg["kind"])
     print("method   : %s" % cfg["method"])
+    print("tag      : %s" % cfg["tag"])
     print("prompts  : %s (%d subjects, %d prompts each)"
           % (cfg["prompts"], len(subjects(cfg)),
              len(prompts_for(cfg, subjects(cfg)[0]))))

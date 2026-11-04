@@ -44,6 +44,29 @@ Install first: [SETUP.md](SETUP.md). Run everything from the repository root.
 └── .cache/
 ```
 
+Everything for one family sits under one directory named after the prompt set,
+so the untouched model and every variant are listed side by side:
+
+```
+videos/imagenette/
+├── base/tench/00.mp4 … 19.mp4
+└── unlearn_church/
+    └── tench/
+        ├── null/00.mp4 …
+        ├── mapping1/…
+        └── mapping2/…
+
+results/imagenette/base/{per_class,frames}.csv  summary.json
+results/imagenette/unlearn_church/mapping1/{per_class,frames}.csv  summary.json
+results/identities/demographic/id_similarity{,_per_video}.csv
+adapters/objects_mapping1/church/unclamped_alpha7/checkpoint-000250/
+```
+
+`unlearn_<concept>` says what the column erased; the directory below the
+subject says which run made those videos. The untouched model has no such level
+because it has no variants — one set of videos per prompt set, shared by
+everything compared against it.
+
 ## Unlearn one concept
 
 ```bash
