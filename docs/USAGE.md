@@ -25,9 +25,6 @@ Install first: [SETUP.md](SETUP.md). Run everything from the repository root.
 ├── evaluation/
 │   ├── resnet.py               objects: ESR and PSR
 │   └── arcface.py              identities: ID-similarity
-├── methods/                    methods compared against
-│   ├── negprompt.py
-│   └── safree/
 ├── slurm/
 │   ├── env.sh                  conda and caches
 │   ├── train.sbatch

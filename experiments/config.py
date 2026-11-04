@@ -70,17 +70,6 @@ DEFAULTS = {
 
 KINDS = ("objects", "identities")
 
-# What produces the videos of a column.
-#
-#   fomo        a LoRA trained by this repository, one per concept
-#   negprompt   the untouched model with the concept as a negative prompt
-#   safree      the untouched model under SAFREE's pipeline
-#
-# The last two train nothing, so an experiment using them has no adapters and
-# its `train` section is ignored. They still need a mapping table, because that
-# is what enumerates the columns.
-METHODS = ("fomo", "negprompt", "safree")
-
 
 class Row(object):
     """One line of a mapping table: one concept to unlearn, one way to do it."""
@@ -138,25 +127,17 @@ def load(path):
     if raw["kind"] not in KINDS:
         raise SystemExit("%s: kind must be one of %s, got %r"
                          % (path, ", ".join(KINDS), raw["kind"]))
-    method = raw.get("method", "fomo")
-    if method not in METHODS:
-        raise SystemExit("%s: method must be one of %s, got %r"
-                         % (path, ", ".join(METHODS), method))
-
     cfg = {
         "path": path,
         "name": raw["name"],
         "kind": raw["kind"],
-        "method": method,
         "prompts": raw["prompts"],
         "mappings": raw["mappings"],
         "mapping": raw["mapping"],
         "label": raw.get("label", raw["name"]),
         # The innermost directory name, which is what distinguishes one run
-        # from another inside a column. For our own method that is the mapping
-        # it trains towards; for a method that trains nothing the mapping is
-        # read only to enumerate the columns, so its own name is what matters.
-        "tag": raw.get("tag", raw["mapping"] if method == "fomo" else method),
+        # from another inside a column: the mapping it trains towards.
+        "tag": raw.get("tag", raw["mapping"]),
         "train": _merge(DEFAULTS["train"], raw.get("train"), path),
         "sampling": _merge(DEFAULTS["sampling"], raw.get("sampling"), path),
     }
@@ -225,7 +206,7 @@ def _shell(cfg):
     variable intact, and the sbatch scripts never need them.
     """
     flat = [("EXP_NAME", cfg["name"]), ("EXP_KIND", cfg["kind"]),
-            ("EXP_METHOD", cfg["method"]), ("EXP_TAG", cfg["tag"]),
+            ("EXP_TAG", cfg["tag"]),
             ("EXP_LABEL", cfg["label"]), ("EXP_PROMPTS", cfg["prompts"]),
             ("EXP_MAPPINGS", cfg["mappings"]), ("EXP_MAPPING", cfg["mapping"]),
             ("EXP_ROWS", " ".join(str(r.index) for r in rows(cfg))),
@@ -279,7 +260,6 @@ def main():
 
     print("name     : %s" % cfg["name"])
     print("kind     : %s" % cfg["kind"])
-    print("method   : %s" % cfg["method"])
     print("tag      : %s" % cfg["tag"])
     print("prompts  : %s (%d subjects, %d prompts each)"
           % (cfg["prompts"], len(subjects(cfg)),

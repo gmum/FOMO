@@ -50,21 +50,15 @@ def resolve_adapter(path, checkpoint=None):
     return found[-1]
 
 
-def load_pipeline(model_path="hunyuanvideo-community/HunyuanVideo", safree=False):
+def load_pipeline(model_path="hunyuanvideo-community/HunyuanVideo"):
     """The text-to-video pipeline on the GPU.
 
     Imported inside the function so that --help and the dry runs elsewhere work
     in an environment without torch, such as a cluster login node.
     """
     import torch
+    from diffusers import HunyuanVideoPipeline as Pipeline
     from diffusers import HunyuanVideoTransformer3DModel
-
-    if safree:
-        # A separate pipeline class, not a flag: it cannot share a process with
-        # the stock one, which is why a SAFREE run generates no baseline.
-        from methods.safree.pipeline import HunyuanVideoPipeline as Pipeline
-    else:
-        from diffusers import HunyuanVideoPipeline as Pipeline
 
     transformer = HunyuanVideoTransformer3DModel.from_pretrained(
         model_path, subfolder="transformer", torch_dtype=torch.bfloat16)

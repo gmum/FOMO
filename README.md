@@ -43,9 +43,6 @@ evaluation/
     resnet.py                 ResNet-50 over every frame; ESR and PSR
     arcface.py                ArcFace against reference photographs
 
-methods/                      the methods FOMO is compared against
-    negprompt.py
-    safree/                   its own fork of the HunyuanVideo pipeline
 slurm/                        env.sh, three sbatch scripts, reproduce_experiment.sh
 ```
 

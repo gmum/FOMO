@@ -72,7 +72,7 @@ if [ -n "$CONCEPT" ]; then
     [ -n "$ROW" ] || { echo "ERROR: '$CONCEPT' is not a column of $EXP_NAME" >&2; exit 2; }
 fi
 
-echo "experiment : $EXP_NAME  ($EXP_KIND, method $EXP_METHOD)"
+echo "experiment : $EXP_NAME  ($EXP_KIND)"
 echo "rows       : $N_ROWS concepts x $N_SUBJECTS subjects"
 [ -n "$CONCEPT" ] && echo "restricted : $CONCEPT  (row $ROW)"
 echo ""
@@ -81,10 +81,6 @@ echo ""
 BASE_ID=""
 if [ "${SKIP_BASE:-0}" = "1" ]; then
     echo "baseline   : skipped on request"
-elif [ "$EXP_METHOD" = "safree" ]; then
-    # SAFREE replaces the pipeline class, so the untouched model is not
-    # available in the same process. Generate it from a fomo row instead.
-    echo "baseline   : skipped, SAFREE replaces the pipeline class"
 else
     echo "baseline:"
     BASE_ID=$(run sbatch --parsable --array="${SUBJECT:-0-$((N_SUBJECTS - 1))}" \
@@ -94,9 +90,7 @@ echo ""
 
 # --- 2. training ------------------------------------------------------------
 TRAIN_ID=""
-if [ "$EXP_METHOD" != "fomo" ]; then
-    echo "training   : nothing to train"
-elif [ "${SKIP_TRAIN:-0}" = "1" ]; then
+if [ "${SKIP_TRAIN:-0}" = "1" ]; then
     echo "training   : skipped on request"
 else
     echo "training:"

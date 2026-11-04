@@ -19,13 +19,6 @@ objects, Preserve for identities.
 The seed depends only on the prompt index, never on the column or the method,
 so the same prompt gets the same noise everywhere and the comparison between
 rows is paired rather than merely averaged.
-
-A note on negative prompts. HunyuanVideo is CFG-distilled, so `guidance_scale`
-feeds a guidance embedding instead of running two-branch guidance, and a
-negative prompt has nowhere to go. The negprompt method therefore switches real
-CFG on -- guidance_scale 1.0 with true_cfg_scale above it -- which also means
-it samples differently from the baseline. That is a property of the baseline
-being reproduced, not a choice made here.
 """
 
 import argparse
@@ -92,22 +85,15 @@ def main():
     cfg = expconfig.load(args.config)
     if args.all and (args.erased or args.subject):
         raise SystemExit("--all takes no --erased or --subject")
-    if args.base and cfg["method"] == "safree":
-        raise SystemExit("A SAFREE experiment has no baseline of its own: the "
-                         "pipeline class is replaced, so the untouched model is "
-                         "not available in the same process. Generate the "
-                         "baseline from a fomo experiment on the same prompts.")
 
     work = plan(cfg, args.base, args.erased, args.subject,
                 root=args.videos_root)
 
     sampling = cfg["sampling"]
-    method = "base" if args.base else cfg["method"]
     # The untouched model has no variants, so its videos carry no tag.
     tag = None if args.base else cfg["tag"]
 
     print("experiment : %s (%s)" % (cfg["name"], cfg["kind"]))
-    print("method     : %s" % method)
     print("tag        : %s" % (tag or "(none, baseline)"))
     print("size       : %dx%d, %d frames, %d steps, gs %s"
           % (sampling["width"], sampling["height"], sampling["num_frames"],
@@ -126,7 +112,7 @@ def main():
     # Adapters, resolved before the model is loaded so that a missing one costs
     # nothing. One per column; a cell inside a column reuses it.
     adapters = {}
-    if method == "fomo":
+    if not args.base:
         for _, erased, _ in work:
             if erased in adapters:
                 continue
@@ -150,13 +136,8 @@ def main():
     from diffusers.utils import export_to_video
 
     print("\nLoading %s ..." % sampling["model_path"])
-    pipe = load_pipeline(sampling["model_path"], safree=(method == "safree"))
-
+    pipe = load_pipeline(sampling["model_path"])
     loaded = set()
-    if method == "safree":
-        from methods.safree.concepts import CONCEPTS as SAFREE_TERMS
-    elif method == "negprompt":
-        from methods.negprompt import sampling_kwargs
 
     started, done, total = time.time(), 0, sum(
         len(expconfig.prompts_for(cfg, s)) for _, _, s in work)
@@ -165,25 +146,17 @@ def main():
         out_dir = layout.videos_in(column, subject, tag)
         os.makedirs(out_dir, exist_ok=True)
 
-        if method == "fomo":
+        if args.base:
+            if hasattr(pipe, "disable_lora"):
+                pipe.disable_lora()
+        else:
             name = layout.slugify(erased)
             if name not in loaded:
                 pipe.load_lora_weights(adapters[erased], adapter_name=name)
                 loaded.add(name)
             pipe.enable_lora()
             pipe.set_adapters([name], adapter_weights=[args.lora_weight])
-            extra = dict(guidance_scale=sampling["guidance_scale"])
-        elif method == "negprompt":
-            extra = sampling_kwargs(erased, sampling["guidance_scale"])
-        elif method == "safree":
-            if erased not in SAFREE_TERMS:
-                raise SystemExit("No SAFREE term list for %r" % erased)
-            extra = dict(guidance_scale=sampling["guidance_scale"],
-                         concept=SAFREE_TERMS[erased])
-        else:
-            if hasattr(pipe, "disable_lora"):
-                pipe.disable_lora()
-            extra = dict(guidance_scale=sampling["guidance_scale"])
+        extra = dict(guidance_scale=sampling["guidance_scale"])
 
         print("\n=== erase %-22s generate %-22s ==="
               % (erased or "nothing", subject))
