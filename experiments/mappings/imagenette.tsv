@@ -1,0 +1,30 @@
+cassette player	null	NONE	A video of a cassette player.	NONE
+cassette player	mapping1	a record player	A video of a cassette player.	A video of a record player.
+cassette player	mapping2	a wooden box	A video of a cassette player.	A video of a wooden box.
+chain saw	null	NONE	A video of a chain saw.	NONE
+chain saw	mapping1	an axe	A video of a chain saw.	A video of an axe.
+chain saw	mapping2	a wooden bat	A video of a chain saw.	A video of a wooden bat.
+church	null	NONE	A video of a church building.	NONE
+church	mapping1	a barn	A video of a church building.	A video of a barn.
+church	mapping2	a skyscraper	A video of a church building.	A video of a skyscraper.
+gas pump	null	NONE	A video of a gas pump.	NONE
+gas pump	mapping1	a vending machine	A video of a gas pump.	A video of a vending machine.
+gas pump	mapping2	a wooden closet	A video of a gas pump.	A video of a wooden closet.
+tench	null	NONE	A video of a tench fish.	NONE
+tench	mapping1	a shark	A video of a tench fish.	A video of a shark.
+tench	mapping2	a crocodile	A video of a tench fish.	A video of a crocodile.
+garbage truck	null	NONE	A video of a garbage truck.	NONE
+garbage truck	mapping1	a fire engine	A video of a garbage truck.	A video of a fire engine.
+garbage truck	mapping2	a ferrari	A video of a garbage truck.	A video of a ferrari.
+English springer	null	NONE	A video of an English springer spaniel dog.	NONE
+English springer	mapping1	a german shepherd	A video of an English springer spaniel dog.	A video of a german shepherd.
+English springer	mapping2	a cat	A video of an English springer spaniel dog.	A video of a cat.
+golf ball	null	NONE	A video of a golf ball.	NONE
+golf ball	mapping1	a basketball	A video of a golf ball.	A video of a basketball.
+golf ball	mapping2	a rubber duck	A video of a golf ball.	A video of a rubber duck.
+parachute	null	NONE	A video of a parachute.	NONE
+parachute	mapping1	a hot air balloon	A video of a parachute.	A video of a hot air balloon.
+parachute	mapping2	an airplane	A video of a parachute.	A video of an airplane.
+French horn	null	NONE	A video of a French horn.	NONE
+French horn	mapping1	a trumpet	A video of a French horn.	A video of a trumpet.
+French horn	mapping2	a hand fan	A video of a French horn.	A video of a hand fan.
