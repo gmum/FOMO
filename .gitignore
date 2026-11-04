@@ -1,14 +1,21 @@
-# Trained adapters and generated video
-outputs/
+# Run artifacts
+adapters/
 videos/
-*.mp4
+results/
+logs/
 
-# Prompt-pair files written by the README example
-pairs.jsonl
-
-# Python
-__pycache__/
-*.py[cod]
+# Reference photographs for the identity metric, and anything else local.
+# Published photographs of public figures are somebody's copyright.
+data/
 
 # Caches
 .cache/
+__pycache__/
+*.py[cod]
+
+# Python environments
+.venv/
+venv/
+
+.DS_Store
+slurm-*.out

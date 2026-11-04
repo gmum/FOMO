@@ -1,0 +1,14 @@
+# Object erasure, Safe Mapping 1: the same ten classes redirected towards a
+# near neighbour instead -- a record player for a cassette player, a shark for
+# a tench. Paired with objects_mapping2 in the mapping ablation.
+name: objects_mapping1
+kind: objects
+label: FOMO (Safe Mapping 1)
+
+prompts: imagenette
+mappings: experiments/mappings/imagenette.tsv
+mapping: mapping1
+
+train:
+  max_train_steps: 250
+  checkpoint: checkpoint-000250

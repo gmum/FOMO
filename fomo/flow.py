@@ -10,8 +10,8 @@ import torch.nn.functional as F
 
 from diffusers.pipelines.hunyuan_video.pipeline_hunyuan_video import DEFAULT_PROMPT_TEMPLATE
 
-from .hunyuan_attention_capture import capture_hunyuan_double_block_attention
-from .token_utils import find_concept_token_indices
+from .attention import capture_hunyuan_double_block_attention
+from .tokens import find_concept_token_indices
 
 
 def transformer_device(pipe) -> torch.device:
