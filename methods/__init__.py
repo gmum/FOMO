@@ -6,8 +6,10 @@
                           same for every backbone
     safree/pipeline_<model>.py
                           SAFREE's own fork of that backbone's pipeline, taken
-                          from their release. Not vendored here: drop the file
-                          in and expose the class as `Pipeline`.
+                          from their release and exporting the class as
+                          `Pipeline`. Present for CogVideoX; for a backbone
+                          they did not release one for, drop the file in under
+                          this name.
 
 Neither method trains anything, so neither produces adapters. Both are driven
 from experiments/generate.py through the `method:` key of an experiment file.

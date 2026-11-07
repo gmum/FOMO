@@ -16,6 +16,11 @@ tqdm
 imageio
 imageio-ffmpeg
 
+# CogVideoX conditions on T5, whose slow tokenizer needs these two.
+# HunyuanVideo uses Llama and CLIP and does not.
+sentencepiece
+protobuf
+
 # Experiment files
 pyyaml
 
