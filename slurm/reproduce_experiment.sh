@@ -7,6 +7,11 @@
 #   DRY=1 bash slurm/reproduce_experiment.sh experiments/identities.yaml      print, submit nothing
 #   SKIP_TRAIN=1 ...                                         adapters already exist
 #   SKIP_BASE=1 ...                                          baseline already generated
+#   TIME_TRAIN=00:20:00 ...                                  shorter wall clock
+#
+# TIME_BASE, TIME_TRAIN, TIME_GEN and TIME_EVAL override the #SBATCH --time of
+# each stage. They default to the headers on HunyuanVideo and to the measured
+# CogVideoX times, which are several times shorter.
 #
 # Five stages, chained by dependency:
 #
@@ -40,6 +45,31 @@ export REPO_DIR="$PWD"
 eval "$(PYTHONPATH="$PWD" python3 -m experiments.config "$CONFIG" --shell)"
 N_ROWS=$(echo "$EXP_ROWS" | wc -w)
 N_SUBJECTS="$EXP_SUBJECTS"
+
+# Wall clock per stage, overriding the #SBATCH headers. The headers are sized
+# for HunyuanVideo; a smaller backbone wants smaller limits, because a short
+# job fits the gaps the scheduler backfills and therefore starts sooner.
+# Empty keeps the header, which is what the default backbone does.
+case "$EXP_MODEL" in
+cogvideox)
+    # Measured: 3 min for a cell of 20 videos, 10 min for 200 training steps.
+    TIME_BASE="${TIME_BASE:-00:30:00}"
+    TIME_TRAIN="${TIME_TRAIN:-00:45:00}"
+    TIME_GEN="${TIME_GEN:-00:30:00}"
+    TIME_EVAL="${TIME_EVAL:-01:00:00}"
+    ;;
+*)
+    TIME_BASE="${TIME_BASE:-}"
+    TIME_TRAIN="${TIME_TRAIN:-}"
+    TIME_GEN="${TIME_GEN:-}"
+    TIME_EVAL="${TIME_EVAL:-}"
+    ;;
+esac
+limit() { [ -n "$1" ] && printf -- '-t\n%s\n' "$1"; }
+mapfile -t T_BASE  < <(limit "$TIME_BASE")
+mapfile -t T_TRAIN < <(limit "$TIME_TRAIN")
+mapfile -t T_GEN   < <(limit "$TIME_GEN")
+mapfile -t T_EVAL  < <(limit "$TIME_EVAL")
 
 # The command goes to stderr, because the job id is read back out of stdout.
 run() {
@@ -83,7 +113,8 @@ if [ "${SKIP_BASE:-0}" = "1" ]; then
     echo "baseline   : skipped on request"
 else
     echo "baseline:"
-    BASE_ID=$(run sbatch --parsable --array="${SUBJECT:-0-$((N_SUBJECTS - 1))}" \
+    BASE_ID=$(run sbatch --parsable "${T_BASE[@]}" \
+        --array="${SUBJECT:-0-$((N_SUBJECTS - 1))}" \
         --export="ALL,CONFIG=$CONFIG,MODE=base" "$HERE/generate.sbatch")
 fi
 echo ""
@@ -94,7 +125,8 @@ if [ "${SKIP_TRAIN:-0}" = "1" ]; then
     echo "training   : skipped on request"
 else
     echo "training:"
-    TRAIN_ID=$(run sbatch --parsable --array="${ROW:-0-$((N_ROWS - 1))}" \
+    TRAIN_ID=$(run sbatch --parsable "${T_TRAIN[@]}" \
+        --array="${ROW:-0-$((N_ROWS - 1))}" \
         --export="ALL,CONFIG=$CONFIG" "$HERE/train.sbatch")
 fi
 echo ""
@@ -116,7 +148,8 @@ else
     GEN_ARRAY="0-$((N_ROWS * N_SUBJECTS - 1))"
 fi
 echo "columns:"
-COLS_ID=$(run sbatch --parsable "${GEN_DEP[@]}" --array="$GEN_ARRAY" \
+COLS_ID=$(run sbatch --parsable "${T_GEN[@]}" "${GEN_DEP[@]}" \
+    --array="$GEN_ARRAY" \
     --export="ALL,CONFIG=$CONFIG$STRICT_FLAG" "$HERE/generate.sbatch")
 echo ""
 
@@ -134,7 +167,8 @@ else
     EVAL_ARRAY="0-$N_ROWS"             # index 0 is the baseline
 fi
 echo "scoring:"
-EVAL_ID=$(run sbatch --parsable "${EVAL_DEP[@]}" --array="$EVAL_ARRAY" \
+EVAL_ID=$(run sbatch --parsable "${T_EVAL[@]}" "${EVAL_DEP[@]}" \
+    --array="$EVAL_ARRAY" \
     --export="ALL,CONFIG=$CONFIG" "$HERE/evaluate.sbatch")
 echo ""
 
@@ -142,7 +176,7 @@ echo ""
 REPORT_DEP=()
 submitted "$EVAL_ID" && REPORT_DEP=(--dependency="afterany:$EVAL_ID" --kill-on-invalid-dep=yes)
 echo "numbers:"
-run sbatch --parsable "${REPORT_DEP[@]}" --array=0 \
+run sbatch --parsable "${T_EVAL[@]}" "${REPORT_DEP[@]}" --array=0 \
     --export="ALL,CONFIG=$CONFIG,REPORT=1" "$HERE/evaluate.sbatch" > /dev/null
 echo ""
 
