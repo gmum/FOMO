@@ -184,13 +184,13 @@ def find_cells(cfg, people, videos_root, include_base):
     """Every (erased, person, directory) the run will score."""
     cells = []
     if include_base:
-        base = layout.base_column(cfg["prompts"], root=videos_root)
+        base = layout.base_column(cfg["tree"], root=videos_root)
         for person in people:
             path = layout.videos_in(base, person)
             if os.path.isdir(path):
                 cells.append(("none", person, path))
     for row in expconfig.rows(cfg):
-        column = layout.unlearn_column(cfg["prompts"], row.concept,
+        column = layout.unlearn_column(cfg["tree"], row.concept,
                                        root=videos_root)
         for person in people:
             path = layout.videos_in(column, person, cfg["tag"])
@@ -228,7 +228,7 @@ def report(cfg, people, short, results_root, decimals=4):
     that was generated: the question a column answers is what that model did to
     everybody else.
     """
-    path = os.path.join(layout.run_results(cfg["prompts"], cfg["tag"],
+    path = os.path.join(layout.run_results(cfg["tree"], cfg["tag"],
                                            root=results_root),
                         "id_similarity_per_video.csv")
     if not os.path.exists(path):
@@ -335,7 +335,7 @@ def main():
         raise SystemExit("No videos found under %s for %s"
                          % (args.videos_root, cfg["name"]))
 
-    results = layout.run_results(cfg["prompts"], cfg["tag"],
+    results = layout.run_results(cfg["tree"], cfg["tag"],
                                  root=args.results_root)
     os.makedirs(results, exist_ok=True)
     out = os.path.join(results, "id_similarity.csv")

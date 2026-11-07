@@ -56,19 +56,45 @@ DEFAULTS = {
         "checkpoint": None,          # which checkpoint the tables are built on
     },
     "sampling": {
-        "width": 1280,
-        "height": 720,
+        "width": None,               # filled from MODELS below unless given
+        "height": None,
         "num_frames": 17,
         "fps": 8,
         "num_inference_steps": 30,
         "guidance_scale": 6.0,
         "seed": 42,
         "num_prompts": 20,
-        "model_path": "hunyuanvideo-community/HunyuanVideo",
+        "model_path": None,
     },
 }
 
 KINDS = ("objects", "identities")
+
+# What produces the videos of a column.
+#
+#   fomo        a LoRA trained by this repository, one per concept
+#   negprompt   the untouched model with the concept as a negative prompt
+#   safree      the untouched model under SAFREE's pipeline
+#
+# The last two train nothing, so an experiment using them has no adapters and
+# its `train` section is ignored. They still need a mapping table, because that
+# is what enumerates the columns.
+METHODS = ("fomo", "negprompt", "safree")
+
+# Backbones, with the checkpoint and the resolution each was trained at.
+# Generating at another size is allowed but is outside the model's training
+# distribution, which has to be stated wherever such numbers appear.
+#
+# The first entry is the default, and the one whose name is left out of
+# directory names so that results produced before a second backbone existed
+# keep their paths.
+MODELS = {
+    "hunyuan": {"model_path": "hunyuanvideo-community/HunyuanVideo",
+                "width": 1280, "height": 720},
+    "cogvideox": {"model_path": "THUDM/CogVideoX-2b",
+                  "width": 720, "height": 480},
+}
+DEFAULT_MODEL = "hunyuan"
 
 
 class Row(object):
@@ -91,6 +117,11 @@ class Row(object):
 
     def __repr__(self):
         return "Row(%r, %r)" % (self.concept, self.mapping)
+
+
+def cfg_tree(prompts, model):
+    """Top-level directory name for one prompt set on one backbone."""
+    return prompts if model == DEFAULT_MODEL else "%s_%s" % (prompts, model)
 
 
 def _merge(defaults, given, where):
@@ -127,6 +158,14 @@ def load(path):
     if raw["kind"] not in KINDS:
         raise SystemExit("%s: kind must be one of %s, got %r"
                          % (path, ", ".join(KINDS), raw["kind"]))
+    method = raw.get("method", "fomo")
+    if method not in METHODS:
+        raise SystemExit("%s: method must be one of %s, got %r"
+                         % (path, ", ".join(METHODS), method))
+    model = raw.get("model", DEFAULT_MODEL)
+    if model not in MODELS:
+        raise SystemExit("%s: model must be one of %s, got %r"
+                         % (path, ", ".join(sorted(MODELS)), model))
     cfg = {
         "path": path,
         "name": raw["name"],
@@ -134,13 +173,28 @@ def load(path):
         "prompts": raw["prompts"],
         "mappings": raw["mappings"],
         "mapping": raw["mapping"],
+        "method": method,
+        "model": model,
         "label": raw.get("label", raw["name"]),
         # The innermost directory name, which is what distinguishes one run
-        # from another inside a column: the mapping it trains towards.
-        "tag": raw.get("tag", raw["mapping"]),
+        # from another inside a column. For our own method that is the mapping
+        # it trains towards; a method that trains nothing reads the mapping
+        # only to enumerate the columns, so its own name is what matters.
+        "tag": raw.get("tag", raw["mapping"] if method == "fomo" else method),
+        # The top-level directory of the whole family. Keyed by the prompt set
+        # and, for anything other than the default backbone, by the model too:
+        # the same prompts on two models are two different sets of videos and
+        # must not land in the same place.
+        "tree": raw.get("tree", cfg_tree(raw["prompts"], model)),
         "train": _merge(DEFAULTS["train"], raw.get("train"), path),
         "sampling": _merge(DEFAULTS["sampling"], raw.get("sampling"), path),
     }
+    # Resolution and checkpoint come from the backbone unless the experiment
+    # says otherwise, so a file that is happy with the native settings does
+    # not have to repeat them.
+    for key, value in MODELS[model].items():
+        if cfg["sampling"].get(key) is None:
+            cfg["sampling"][key] = value
     if not rows(cfg):
         raise SystemExit("%s: no rows with mapping %r in %s"
                          % (path, cfg["mapping"], cfg["mappings"]))
@@ -206,7 +260,8 @@ def _shell(cfg):
     variable intact, and the sbatch scripts never need them.
     """
     flat = [("EXP_NAME", cfg["name"]), ("EXP_KIND", cfg["kind"]),
-            ("EXP_TAG", cfg["tag"]),
+            ("EXP_METHOD", cfg["method"]), ("EXP_MODEL", cfg["model"]),
+            ("EXP_TAG", cfg["tag"]), ("EXP_TREE", cfg["tree"]),
             ("EXP_LABEL", cfg["label"]), ("EXP_PROMPTS", cfg["prompts"]),
             ("EXP_MAPPINGS", cfg["mappings"]), ("EXP_MAPPING", cfg["mapping"]),
             ("EXP_ROWS", " ".join(str(r.index) for r in rows(cfg))),
@@ -260,7 +315,12 @@ def main():
 
     print("name     : %s" % cfg["name"])
     print("kind     : %s" % cfg["kind"])
+    print("method   : %s" % cfg["method"])
+    print("model    : %s  (%s, %dx%d)"
+          % (cfg["model"], cfg["sampling"]["model_path"],
+             cfg["sampling"]["width"], cfg["sampling"]["height"]))
     print("tag      : %s" % cfg["tag"])
+    print("tree     : %s" % cfg["tree"])
     print("prompts  : %s (%d subjects, %d prompts each)"
           % (cfg["prompts"], len(subjects(cfg)),
              len(prompts_for(cfg, subjects(cfg)[0]))))

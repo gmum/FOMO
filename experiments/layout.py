@@ -9,16 +9,17 @@ The tree, with the roots overridable but defaulted:
 
     adapters/<experiment>/<concept>/<mask>_alpha<alpha>/checkpoint-NNNNNN/
 
-    videos/<prompts>/base/<subject>/NN.mp4
-    videos/<prompts>/unlearn_<erased>/<subject>/<tag>/NN.mp4
+    videos/<tree>/base/<subject>/NN.mp4
+    videos/<tree>/unlearn_<erased>/<subject>/<tag>/NN.mp4
 
-    results/<prompts>/base/{per_class,frames}.csv  summary.json
-    results/<prompts>/unlearn_<erased>/<tag>/{per_class,frames}.csv  summary.json
-    results/<prompts>/<tag>/id_similarity{,_per_video}.csv
+    results/<tree>/base/{per_class,frames}.csv  summary.json
+    results/<tree>/unlearn_<erased>/<tag>/{per_class,frames}.csv  summary.json
+    results/<tree>/<tag>/id_similarity{,_per_video}.csv
 
-Everything for one family of experiments sits under one directory named after
-the prompt set -- `imagenette`, `identities` -- so the untouched model and
-every variant are listed side by side. `unlearn_<concept>` says what the column
+Everything for one family of experiments sits under one directory, `<tree>`,
+named after the prompt set and, for anything other than the default backbone,
+after the model too -- `imagenette`, `imagenette_cogvideox`, `identities` --
+so the untouched model and every variant are listed side by side. `unlearn_<concept>` says what the column
 erased, and `<tag>` at the bottom says which run produced those videos: the
 mapping it trained towards, or the name of a method that trains nothing.
 
@@ -56,14 +57,14 @@ def adapter_dir(experiment, concept, mask_mode="unclamped", alpha=7,
 
 # --- videos ---------------------------------------------------------------
 
-def base_column(prompts, root="videos"):
-    """The untouched model's videos for one prompt set."""
-    return os.path.join(root, prompts, "base")
+def base_column(tree, root="videos"):
+    """The untouched model's videos for one family."""
+    return os.path.join(root, tree, "base")
 
 
-def unlearn_column(prompts, erased, root="videos"):
+def unlearn_column(tree, erased, root="videos"):
     """One column: the model that erased `erased`, asked for every subject."""
-    return os.path.join(root, prompts, "unlearn_%s" % slugify(erased))
+    return os.path.join(root, tree, "unlearn_%s" % slugify(erased))
 
 
 def videos_in(column, subject, tag=None):
@@ -79,14 +80,14 @@ def videos_in(column, subject, tag=None):
 
 # --- results --------------------------------------------------------------
 
-def base_results(prompts, root="results"):
-    return os.path.join(root, prompts, "base")
+def base_results(tree, root="results"):
+    return os.path.join(root, tree, "base")
 
 
-def column_results(prompts, erased, tag, root="results"):
-    return os.path.join(root, prompts, "unlearn_%s" % slugify(erased), tag)
+def column_results(tree, erased, tag, root="results"):
+    return os.path.join(root, tree, "unlearn_%s" % slugify(erased), tag)
 
 
-def run_results(prompts, tag, root="results"):
+def run_results(tree, tag, root="results"):
     """Results of one run that are not per column -- the identity CSVs."""
-    return os.path.join(root, prompts, tag)
+    return os.path.join(root, tree, tag)

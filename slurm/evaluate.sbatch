@@ -76,7 +76,7 @@ fi
 
 require_modules torch torchvision
 if [ "$IDX" = "0" ]; then
-    echo "task $IDX | baseline for prompt set '$EXP_PROMPTS'"
+    echo "task $IDX | baseline for '$EXP_TREE'"
     exec python3 -m evaluation.resnet "$CONFIG" --base
 fi
 

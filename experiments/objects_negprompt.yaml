@@ -1,0 +1,18 @@
+# NegPrompt: the untouched model with the erased concept as a negative prompt.
+# A method we compare against, not one of ours -- it trains nothing, so the
+# `train` section is unused and there are no adapters.
+#
+# HunyuanVideo is CFG-distilled, so a negative prompt has no effect unless real
+# two-branch guidance is switched back on. The generator does that, which also
+# means this row is sampled differently from the baseline above it. That
+# follows from what is being reproduced and is not a choice made here.
+name: objects_negprompt
+kind: objects
+method: negprompt
+label: NegPrompt
+
+prompts: imagenette
+# The mapping is only read to enumerate the columns; nothing is trained, so
+# which targets it carries makes no difference.
+mappings: experiments/mappings/imagenette.tsv
+mapping: mapping2

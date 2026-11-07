@@ -206,7 +206,7 @@ def report(cfg, classes, order, results_root):
     """
     blocks = []
 
-    path = os.path.join(layout.base_results(cfg["prompts"], root=results_root),
+    path = os.path.join(layout.base_results(cfg["tree"], root=results_root),
                         "per_class.csv")
     if os.path.exists(path):
         blocks.append(("HunyuanVideo (untouched)",
@@ -218,7 +218,7 @@ def report(cfg, classes, order, results_root):
     cells, missing = {}, []
     for row in expconfig.rows(cfg):
         path = os.path.join(
-            layout.column_results(cfg["prompts"], row.concept, cfg["tag"],
+            layout.column_results(cfg["tree"], row.concept, cfg["tag"],
                                   root=results_root),
             "per_class.csv")
         if not os.path.exists(path):
@@ -294,15 +294,15 @@ def main():
 
     if args.base:
         tag = None
-        column = layout.base_column(cfg["prompts"], root=args.videos_root)
-        results = layout.base_results(cfg["prompts"], root=args.results_root)
+        column = layout.base_column(cfg["tree"], root=args.videos_root)
+        results = layout.base_results(cfg["tree"], root=args.results_root)
     else:
         if args.erased not in classes:
             raise SystemExit("%r is not an Imagenette class." % args.erased)
         tag = cfg["tag"]
-        column = layout.unlearn_column(cfg["prompts"], args.erased,
+        column = layout.unlearn_column(cfg["tree"], args.erased,
                                        root=args.videos_root)
-        results = layout.column_results(cfg["prompts"], args.erased, tag,
+        results = layout.column_results(cfg["tree"], args.erased, tag,
                                         root=args.results_root)
     results = args.output_dir or results
 

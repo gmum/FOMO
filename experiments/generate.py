@@ -46,7 +46,7 @@ def plan(cfg, base, erased, subjects_wanted, root="videos"):
             raise SystemExit("%r is not a subject of %s. Known: %s"
                              % (subject, cfg["prompts"], ", ".join(everyone)))
     if base:
-        return [(layout.base_column(cfg["prompts"], root=root), None, s) for s in chosen]
+        return [(layout.base_column(cfg["tree"], root=root), None, s) for s in chosen]
 
     columns = [r.concept for r in expconfig.rows(cfg)]
     if erased:
@@ -54,7 +54,7 @@ def plan(cfg, base, erased, subjects_wanted, root="videos"):
             raise SystemExit("%r is not a column of %s. Columns: %s"
                              % (erased, cfg["name"], ", ".join(columns)))
         columns = [erased]
-    return [(layout.unlearn_column(cfg["prompts"], c, root=root), c, s)
+    return [(layout.unlearn_column(cfg["tree"], c, root=root), c, s)
             for c in columns for s in chosen]
 
 
@@ -85,15 +85,23 @@ def main():
     cfg = expconfig.load(args.config)
     if args.all and (args.erased or args.subject):
         raise SystemExit("--all takes no --erased or --subject")
+    if args.base and cfg["method"] == "safree":
+        raise SystemExit("A SAFREE experiment has no baseline of its own: the "
+                         "pipeline class is replaced, so the untouched model "
+                         "is not available in the same process. Generate the "
+                         "baseline from a fomo experiment on the same tree.")
 
     work = plan(cfg, args.base, args.erased, args.subject,
                 root=args.videos_root)
 
     sampling = cfg["sampling"]
+    method = "base" if args.base else cfg["method"]
     # The untouched model has no variants, so its videos carry no tag.
     tag = None if args.base else cfg["tag"]
 
     print("experiment : %s (%s)" % (cfg["name"], cfg["kind"]))
+    print("backbone   : %s (%s)" % (cfg["model"], sampling["model_path"]))
+    print("method     : %s" % method)
     print("tag        : %s" % (tag or "(none, baseline)"))
     print("size       : %dx%d, %d frames, %d steps, gs %s"
           % (sampling["width"], sampling["height"], sampling["num_frames"],
@@ -112,7 +120,7 @@ def main():
     # Adapters, resolved before the model is loaded so that a missing one costs
     # nothing. One per column; a cell inside a column reuses it.
     adapters = {}
-    if not args.base:
+    if method == "fomo":
         for _, erased, _ in work:
             if erased in adapters:
                 continue
@@ -136,8 +144,13 @@ def main():
     from diffusers.utils import export_to_video
 
     print("\nLoading %s ..." % sampling["model_path"])
-    pipe = load_pipeline(sampling["model_path"])
+    pipe = load_pipeline(sampling["model_path"], cfg["model"],
+                         safree=(method == "safree"))
     loaded = set()
+    if method == "safree":
+        from methods.safree.concepts import CONCEPTS as SAFREE_TERMS
+    elif method == "negprompt":
+        from methods.negprompt import sampling_kwargs
 
     started, done, total = time.time(), 0, sum(
         len(expconfig.prompts_for(cfg, s)) for _, _, s in work)
@@ -146,17 +159,23 @@ def main():
         out_dir = layout.videos_in(column, subject, tag)
         os.makedirs(out_dir, exist_ok=True)
 
-        if args.base:
-            if hasattr(pipe, "disable_lora"):
-                pipe.disable_lora()
-        else:
+        extra = dict(guidance_scale=sampling["guidance_scale"])
+        if method == "fomo":
             name = layout.slugify(erased)
             if name not in loaded:
                 pipe.load_lora_weights(adapters[erased], adapter_name=name)
                 loaded.add(name)
             pipe.enable_lora()
             pipe.set_adapters([name], adapter_weights=[args.lora_weight])
-        extra = dict(guidance_scale=sampling["guidance_scale"])
+        elif method == "negprompt":
+            extra = sampling_kwargs(erased, sampling["guidance_scale"],
+                                    model=cfg["model"])
+        elif method == "safree":
+            if erased not in SAFREE_TERMS:
+                raise SystemExit("No SAFREE term list for %r" % erased)
+            extra["concept"] = SAFREE_TERMS[erased]
+        elif hasattr(pipe, "disable_lora"):
+            pipe.disable_lora()
 
         print("\n=== erase %-22s generate %-22s ==="
               % (erased or "nothing", subject))

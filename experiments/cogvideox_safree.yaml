@@ -1,0 +1,19 @@
+# SAFREE on CogVideoX. A method we compare against; it trains nothing.
+#
+# Needs SAFREE's own fork of the CogVideoX pipeline, dropped in as
+# methods/safree/pipeline_cogvideox.py and exposing the class as `Pipeline`.
+# The per-concept term lists in methods/safree/concepts.py are plain text and
+# carry over from the HunyuanVideo experiments unchanged.
+#
+# The pipeline class is replaced rather than configured, so this experiment
+# generates no baseline of its own; take it from cogvideox_mapping2.
+name: cogvideox_safree
+kind: objects
+method: safree
+label: SAFREE
+
+model: cogvideox
+
+prompts: imagenette
+mappings: experiments/mappings/imagenette.tsv
+mapping: mapping2

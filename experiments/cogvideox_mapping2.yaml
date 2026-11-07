@@ -1,0 +1,24 @@
+# FOMO on CogVideoX, Safe Mapping 2 -- the configuration the main object table
+# reports for HunyuanVideo, repeated on a second backbone.
+#
+# The prompts and the mapping table are the ones from the paper, unchanged.
+# Note that CogVideoX is trained on long LLM-refined captions and degrades on
+# short prompts far more than HunyuanVideo does: on this prompt set at its
+# native resolution the untouched model reaches about 45 mean Top-1 against
+# the 78 reported elsewhere for the same protocol. Erasure scores on columns
+# the model never drew well are high for free, and that has to be said
+# wherever these numbers appear.
+name: cogvideox_mapping2
+kind: objects
+method: fomo
+label: FOMO (Safe Mapping 2)
+
+model: cogvideox
+
+prompts: imagenette
+mappings: experiments/mappings/imagenette.tsv
+mapping: mapping2
+
+train:
+  max_train_steps: 250
+  checkpoint: checkpoint-000250

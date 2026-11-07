@@ -50,20 +50,52 @@ def resolve_adapter(path, checkpoint=None):
     return found[-1]
 
 
-def load_pipeline(model_path="hunyuanvideo-community/HunyuanVideo"):
+def load_pipeline(model_path="hunyuanvideo-community/HunyuanVideo",
+                  model="hunyuan", safree=False):
     """The text-to-video pipeline on the GPU.
 
     Imported inside the function so that --help and the dry runs elsewhere work
     in an environment without torch, such as a cluster login node.
+
+    With `safree`, the stock pipeline class is replaced by SAFREE's fork of it,
+    `methods/safree/pipeline_<model>.py`. It is a separate class rather than a
+    flag, so it cannot share a process with the untouched model, which is why
+    a SAFREE run generates no baseline of its own.
     """
     import torch
-    from diffusers import HunyuanVideoPipeline as Pipeline
-    from diffusers import HunyuanVideoTransformer3DModel
 
-    transformer = HunyuanVideoTransformer3DModel.from_pretrained(
-        model_path, subfolder="transformer", torch_dtype=torch.bfloat16)
-    pipe = Pipeline.from_pretrained(
-        model_path, transformer=transformer, torch_dtype=torch.float16)
+    if safree:
+        import importlib
+        try:
+            module = importlib.import_module("methods.safree.pipeline_%s" % model)
+        except ModuleNotFoundError:
+            raise SystemExit(
+                "SAFREE has no pipeline for %r. Drop their fork of the %s "
+                "pipeline in as methods/safree/pipeline_%s.py; it has to "
+                "expose the pipeline class and accept a `concept` argument."
+                % (model, model, model))
+        pipe = module.Pipeline.from_pretrained(
+            model_path,
+            torch_dtype=torch.float16 if model == "cogvideox" else torch.float16)
+        pipe.vae.enable_tiling()
+        pipe.to("cuda")
+        return pipe
+
+    if model == "hunyuan":
+        from diffusers import HunyuanVideoPipeline, HunyuanVideoTransformer3DModel
+        transformer = HunyuanVideoTransformer3DModel.from_pretrained(
+            model_path, subfolder="transformer", torch_dtype=torch.bfloat16)
+        pipe = HunyuanVideoPipeline.from_pretrained(
+            model_path, transformer=transformer, torch_dtype=torch.float16)
+    elif model == "cogvideox":
+        from diffusers import CogVideoXPipeline
+        # CogVideoX-2b is released in float16; the 5b variants are bfloat16.
+        dtype = torch.float16 if "2b" in model_path.lower() else torch.bfloat16
+        pipe = CogVideoXPipeline.from_pretrained(model_path, torch_dtype=dtype)
+        pipe.vae.enable_slicing()
+    else:
+        raise SystemExit("Unknown backbone %r" % model)
+
     pipe.vae.enable_tiling()
     pipe.to("cuda")
     return pipe
@@ -87,6 +119,7 @@ def main():
                          "this also switches real two-branch guidance on, "
                          "which changes how the video is sampled.")
     ap.add_argument("--model-path", default="hunyuanvideo-community/HunyuanVideo")
+    ap.add_argument("--model", default="hunyuan", choices=("hunyuan", "cogvideox"))
     ap.add_argument("--height", type=int, default=720)
     ap.add_argument("--width", type=int, default=1280)
     ap.add_argument("--num-frames", type=int, default=17,
@@ -97,13 +130,15 @@ def main():
     ap.add_argument("--fps", type=int, default=8)
     args = ap.parse_args()
 
+    # Both backbones decode in groups of four, so the frame count has to
+    # satisfy this; catching it here beats finding out after a model load.
     if (args.num_frames - 1) % 4:
         raise SystemExit("--num-frames must be of the form 4k+1 (17, 33, 49, 65).")
 
     import torch
     from diffusers.utils import export_to_video
 
-    pipe = load_pipeline(args.model_path)
+    pipe = load_pipeline(args.model_path, args.model)
 
     extra = dict(guidance_scale=args.guidance)
     if args.adapter:

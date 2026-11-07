@@ -1,0 +1,16 @@
+# NegPrompt on CogVideoX. A method we compare against; it trains nothing.
+#
+# Unlike HunyuanVideo, CogVideoX already runs two-branch guidance, so the
+# negative prompt takes effect without switching the sampler -- this row is
+# therefore sampled the same way as the baseline it is compared against, which
+# is not true of the HunyuanVideo table.
+name: cogvideox_negprompt
+kind: objects
+method: negprompt
+label: NegPrompt
+
+model: cogvideox
+
+prompts: imagenette
+mappings: experiments/mappings/imagenette.tsv
+mapping: mapping2
