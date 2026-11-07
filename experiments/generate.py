@@ -124,8 +124,10 @@ def main():
         for _, erased, _ in work:
             if erased in adapters:
                 continue
+            # CogVideoX has no mask-mode sweep, so its defaults do not carry
+            # the key; the directory name keeps the same shape either way.
             directory = layout.adapter_dir(
-                cfg["name"], erased, cfg["train"]["mask_mode"],
+                cfg["name"], erased, cfg["train"].get("mask_mode", "unclamped"),
                 cfg["train"]["imap_alpha"], root=args.adapters_root)
             if not os.path.isdir(directory):
                 if args.allow_missing:

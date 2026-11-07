@@ -7,10 +7,13 @@ Install first: [SETUP.md](SETUP.md). Run everything from the repository root.
 ```
 .
 ├── fomo/                       the method
-│   ├── train.py                training loop and losses
+│   ├── train.py                training on HunyuanVideo
+│   ├── cogvideox.py            training on CogVideoX, L_H only
+│   ├── cogvideox_hv.py         training on CogVideoX, L_H + L_V
+│   ├── cogvideox_tokens.py     its token lookup and layer groups
 │   ├── unlearn.py              unlearn one concept
 │   ├── sample.py               generate one video
-│   ├── localization.py         the concept mask
+│   ├── localization.py         the concept mask, shared by both backbones
 │   ├── lora.py                 adapter placement
 │   ├── flow.py                 timesteps and guidance
 │   ├── tokens.py               concept token lookup
@@ -25,6 +28,9 @@ Install first: [SETUP.md](SETUP.md). Run everything from the repository root.
 ├── evaluation/
 │   ├── resnet.py               objects: ESR and PSR
 │   └── arcface.py              identities: ID-similarity
+├── methods/                    the methods compared against
+│   ├── negprompt.py
+│   └── safree/
 ├── slurm/
 │   ├── env.sh                  conda and caches
 │   ├── train.sbatch
@@ -92,6 +98,20 @@ only by the adapter.
 | FOMO, Safe Mapping 1 | `experiments/objects_mapping1.yaml` |
 | FOMO, Safe Mapping 2 | `experiments/objects_mapping2.yaml` |
 | public figures | `experiments/identities.yaml` |
+
+On CogVideoX-2B, at its native 720x480, with the same prompts and mappings:
+
+| | file |
+|---|---|
+| FOMO, Safe Mapping 2 | `experiments/cogvideox_mapping2.yaml` |
+| NegPrompt | `experiments/cogvideox_negprompt.yaml` |
+| SAFREE | `experiments/cogvideox_safree.yaml` |
+
+A second backbone means a second tree: those write to
+`videos/imagenette_cogvideox/` and `results/imagenette_cogvideox/`, so nothing
+collides with the HunyuanVideo results. Training settings come from
+`TRAIN_DEFAULTS` in `experiments/config.py`, one profile per backbone, because
+the two trainers take different flags.
 
 ```bash
 bash slurm/reproduce_experiment.sh experiments/objects_mapping2.yaml

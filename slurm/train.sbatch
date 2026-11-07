@@ -57,7 +57,10 @@ TARGET_PROMPT="${ROW[3]}"
 UNSEEN_PROMPT="${ROW[4]}"
 
 SLUG=$(python3 -c 'import sys; from experiments.layout import slugify; print(slugify(sys.argv[1]))' "$CONCEPT")
-OUTPUT_DIR="${ADAPTERS_ROOT:-adapters}/$EXP_NAME/$SLUG/${TRAIN_MASK_MODE}_alpha${TRAIN_IMAP_ALPHA}"
+# The mask mode is part of the directory name on HunyuanVideo, where it was
+# swept; CogVideoX names it the same way for consistency, with clamping off.
+MASK_MODE="${TRAIN_MASK_MODE:-unclamped}"
+OUTPUT_DIR="${ADAPTERS_ROOT:-adapters}/$EXP_NAME/$SLUG/${MASK_MODE}_alpha${TRAIN_IMAP_ALPHA}"
 mkdir -p "$OUTPUT_DIR"
 
 # The concepts travel in the pair file, because the trainer reads
@@ -77,6 +80,7 @@ PY
 # Previews during training, if they are switched on: the prompt that was trained
 # on, and prompt 00 of the evaluation set, which is what the benchmark scores.
 # Seeing only the training prompt tells you nothing about generalisation.
+# CogVideoX takes no such file; it renders the first pair and nothing else.
 EVALS="$OUTPUT_DIR/eval_prompts.jsonl"
 python3 - "$EVALS" "$SOURCE_PROMPT" "$UNSEEN_PROMPT" <<'PY'
 import json, sys
@@ -96,36 +100,87 @@ echo "  target: ${TARGET_PROMPT:-(empty prompt)}"
 echo "  steps $TRAIN_MAX_TRAIN_STEPS   lr $TRAIN_LEARNING_RATE   alpha $TRAIN_IMAP_ALPHA"
 echo "  output: $OUTPUT_DIR"
 
-CMD=(
-    python3 -m fomo.train
-    --model_path "$GEN_MODEL_PATH"
-    --output_dir "$OUTPUT_DIR"
-    --source_concept "$CONCEPT"
-    --target_concept "$TARGET_CONCEPT"
-    --prompt_pairs_jsonl "$PAIRS"
-    --eval_prompts_jsonl "$EVALS"
-    --eval_prompt "$SOURCE_PROMPT"
-    --max_train_steps "$TRAIN_MAX_TRAIN_STEPS"
-    --checkpointing_steps "$TRAIN_CHECKPOINTING_STEPS"
-    --learning_rate "$TRAIN_LEARNING_RATE"
-    --rank "$TRAIN_RANK" --lora_alpha "$TRAIN_LORA_ALPHA"
-    --target_modules "$TRAIN_TARGET_MODULES"
-    --imap_alpha "$TRAIN_IMAP_ALPHA"
-    --lamb_v "$TRAIN_LAMB_V" --v_steps "$TRAIN_V_STEPS"
-    --v_block_min "$TRAIN_V_BLOCK_MIN" --v_early_prob "$TRAIN_V_EARLY_PROB"
-    --v_mask_mode "$TRAIN_V_MASK_MODE"
-    --double_blocks "$TRAIN_DOUBLE_BLOCKS"
-    --trajectory_steps "$TRAIN_TRAJECTORY_STEPS"
-    --height "$GEN_HEIGHT" --width "$GEN_WIDTH" --num_frames "$GEN_NUM_FRAMES"
-    --guidance_scale "$GEN_GUIDANCE_SCALE"
-    --seed "$GEN_SEED"
-    # Gradient checkpointing has to be on for both passes. --v_disable_gc
-    # defaults to true and turns it off during the preservation pass, which
-    # fits at 512x288 and runs out of memory at 1280x720.
-    --v_video_only --no-v_disable_gc --split_hv_backward --gradient_checkpointing
-    --skip_eval
-)
-if [ "$TRAIN_MASK_MODE" = "clamped" ]; then CMD+=(--clamp_mask); fi
+if [ "$EXP_MODEL" = "cogvideox" ]; then
+    # Their profile from COGVIDEOX_IMAP_HV_LORA.md. CogVideoX has no
+    # double-stream blocks, so the loss layers are named as groups rather than
+    # block indices, and the preservation layers are given outright.
+    CMD=(
+        python3 -m fomo.cogvideox_hv
+        --model_path "$GEN_MODEL_PATH"
+        --output_dir "$OUTPUT_DIR"
+        --source_concept "$CONCEPT"
+        --target_concept "$TARGET_CONCEPT"
+        --prompt_pairs_jsonl "$PAIRS"
+        --max_train_steps "$TRAIN_MAX_TRAIN_STEPS"
+        --checkpointing_steps "$TRAIN_CHECKPOINTING_STEPS"
+        --learning_rate "$TRAIN_LEARNING_RATE"
+        --weight_decay "$TRAIN_WEIGHT_DECAY"
+        --rank "$TRAIN_RANK" --lora_alpha "$TRAIN_LORA_ALPHA"
+        --lora_target_preset "$TRAIN_LORA_TARGET_PRESET"
+        --target_modules "$TRAIN_TARGET_MODULES"
+        --h_layer_groups "$TRAIN_H_LAYER_GROUPS"
+        --v_layers "$TRAIN_V_LAYERS"
+        --imap_alpha "$TRAIN_IMAP_ALPHA"
+        --lamb_h "$TRAIN_LAMB_H" --lamb_v "$TRAIN_LAMB_V"
+        --v_steps "$TRAIN_V_STEPS" --v_early_prob "$TRAIN_V_EARLY_PROB"
+        --v_mask_mode "$TRAIN_V_MASK_MODE"
+        --trajectory_steps "$TRAIN_TRAJECTORY_STEPS"
+        --min_target_step "$TRAIN_MIN_TARGET_STEP"
+        --max_target_step "$TRAIN_MAX_TARGET_STEP"
+        --max_grad_norm "$TRAIN_MAX_GRAD_NORM"
+        --max_sequence_length "$TRAIN_MAX_SEQUENCE_LENGTH"
+        --dtype "$TRAIN_DTYPE"
+        --height "$GEN_HEIGHT" --width "$GEN_WIDTH" --num_frames "$GEN_NUM_FRAMES"
+        --guidance_scale "$GEN_GUIDANCE_SCALE"
+        --seed "$GEN_SEED"
+    )
+    [ "$TRAIN_CLAMP_MASK" = "True" ] && CMD+=(--clamp_mask)
+    [ "$TRAIN_SPLIT_HV_BACKWARD" = "True" ] && CMD+=(--split_hv_backward)
+    if [ "$TRAIN_GRADIENT_CHECKPOINTING" = "True" ]; then
+        CMD+=(--gradient_checkpointing)
+    else
+        CMD+=(--no-gradient_checkpointing)
+    fi
+    # Previews are rendered with their own generator and cannot touch the
+    # training RNG, so leaving them off changes nothing in the adapter.
+    if [ "$TRAIN_SAVE_TRAINING_VIDEOS" = "True" ]; then
+        CMD+=(--save_training_videos)
+    else
+        CMD+=(--no-save_training_videos)
+    fi
+else
+    CMD=(
+        python3 -m fomo.train
+        --model_path "$GEN_MODEL_PATH"
+        --output_dir "$OUTPUT_DIR"
+        --source_concept "$CONCEPT"
+        --target_concept "$TARGET_CONCEPT"
+        --prompt_pairs_jsonl "$PAIRS"
+        --eval_prompts_jsonl "$EVALS"
+        --eval_prompt "$SOURCE_PROMPT"
+        --max_train_steps "$TRAIN_MAX_TRAIN_STEPS"
+        --checkpointing_steps "$TRAIN_CHECKPOINTING_STEPS"
+        --learning_rate "$TRAIN_LEARNING_RATE"
+        --rank "$TRAIN_RANK" --lora_alpha "$TRAIN_LORA_ALPHA"
+        --target_modules "$TRAIN_TARGET_MODULES"
+        --imap_alpha "$TRAIN_IMAP_ALPHA"
+        --lamb_v "$TRAIN_LAMB_V" --v_steps "$TRAIN_V_STEPS"
+        --v_block_min "$TRAIN_V_BLOCK_MIN" --v_early_prob "$TRAIN_V_EARLY_PROB"
+        --v_mask_mode "$TRAIN_V_MASK_MODE"
+        --double_blocks "$TRAIN_DOUBLE_BLOCKS"
+        --trajectory_steps "$TRAIN_TRAJECTORY_STEPS"
+        --height "$GEN_HEIGHT" --width "$GEN_WIDTH" --num_frames "$GEN_NUM_FRAMES"
+        --guidance_scale "$GEN_GUIDANCE_SCALE"
+        --seed "$GEN_SEED"
+        # Gradient checkpointing has to be on for both passes. --v_disable_gc
+        # defaults to true and turns it off during the preservation pass, which
+        # fits at 512x288 and runs out of memory at 1280x720.
+        --v_video_only --no-v_disable_gc --split_hv_backward --gradient_checkpointing
+        --skip_eval
+    )
+    if [ "$MASK_MODE" = "clamped" ]; then CMD+=(--clamp_mask); fi
+fi
+
 
 printf 'command:'; printf ' %q' "${CMD[@]}"; printf '\n'
 exec "${CMD[@]}"

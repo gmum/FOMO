@@ -36,8 +36,16 @@ REPO = os.path.dirname(HERE)
 # Settings every experiment has, with the values used in the paper. An
 # experiment file overrides what it needs and stays silent about the rest, so
 # the diff between two experiments is only what actually differs.
-DEFAULTS = {
-    "train": {
+# Training settings, per backbone, with the values each was tuned at. The two
+# trainers take different flags -- CogVideoX has no double-stream blocks, so it
+# names layer groups rather than block indices -- which is why this is a
+# dictionary per model and not one table with different numbers in it.
+#
+# An experiment file overrides what it needs and stays silent about the rest,
+# so the diff between two experiments is only what actually differs.
+TRAIN_DEFAULTS = {
+    # The paper's object and public-figure settings.
+    "hunyuan": {
         "learning_rate": 1e-3,
         "imap_alpha": 7,
         "mask_mode": "unclamped",
@@ -55,6 +63,44 @@ DEFAULTS = {
         "trajectory_steps": 30,
         "checkpoint": None,          # which checkpoint the tables are built on
     },
+    # The profile in COGVIDEOX_IMAP_HV_LORA.md, which is what was tested on
+    # this backbone. The H layers are IMAP's own list for CogVideoX-2B and the
+    # V layers are the six late blocks; neither has a counterpart above.
+    "cogvideox": {
+        "learning_rate": 5e-4,
+        "weight_decay": 1e-4,
+        "imap_alpha": 5.0,
+        "clamp_mask": False,
+        "max_train_steps": 200,
+        "checkpointing_steps": 10,
+        "rank": 8,
+        "lora_alpha": 8,
+        "lora_target_preset": "text_qk",
+        "target_modules": "",
+        "h_layer_groups": "imap",
+        "v_layers": "24,25,26,27,28,29",
+        "lamb_h": 1.0,
+        "lamb_v": 0.5,
+        "v_steps": 1,
+        "v_early_prob": 0.5,
+        "v_mask_mode": "background",
+        "split_hv_backward": False,
+        "gradient_checkpointing": True,
+        "trajectory_steps": 30,
+        "min_target_step": 0,
+        "max_target_step": 29,
+        "max_grad_norm": 1.0,
+        "max_sequence_length": 226,
+        "dtype": "bfloat16",
+        # Previews are rendered with their own generator and cannot touch the
+        # training RNG, so switching them off changes nothing in the adapter
+        # and saves twenty videos per concept.
+        "save_training_videos": False,
+        "checkpoint": None,
+    },
+}
+
+DEFAULTS = {
     "sampling": {
         "width": None,               # filled from MODELS below unless given
         "height": None,
@@ -186,7 +232,7 @@ def load(path):
         # the same prompts on two models are two different sets of videos and
         # must not land in the same place.
         "tree": raw.get("tree", cfg_tree(raw["prompts"], model)),
-        "train": _merge(DEFAULTS["train"], raw.get("train"), path),
+        "train": _merge(TRAIN_DEFAULTS[model], raw.get("train"), path),
         "sampling": _merge(DEFAULTS["sampling"], raw.get("sampling"), path),
     }
     # Resolution and checkpoint come from the backbone unless the experiment

@@ -19,6 +19,10 @@ prompts: imagenette
 mappings: experiments/mappings/imagenette.tsv
 mapping: mapping2
 
+# Everything else is the profile from COGVIDEOX_IMAP_HV_LORA.md, which is
+# what was tested on this backbone: 200 updates, lr 5e-4, mask alpha 5 without
+# clamping, LoRA rank 8 on the shared Q/K projections, L_H over IMAP's
+# seventeen CogVideoX-2B layers and L_V over the six late blocks. It lives in
+# TRAIN_DEFAULTS["cogvideox"] in experiments/config.py.
 train:
-  max_train_steps: 250
-  checkpoint: checkpoint-000250
+  checkpoint: checkpoint-000200
