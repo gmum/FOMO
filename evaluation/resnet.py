@@ -206,13 +206,18 @@ def report(cfg, classes, order, results_root):
     """
     blocks = []
 
+    # Named after the backbone, because the baseline is a property of the model
+    # rather than of the experiment: a row labelled with the wrong model is the
+    # one mistake in this table nobody would catch by reading the numbers.
+    untouched = "%s (untouched)" % expconfig.MODELS[cfg["model"]]["model_path"].split("/")[-1]
+
     path = os.path.join(layout.base_results(cfg["tree"], root=results_root),
                         "per_class.csv")
     if os.path.exists(path):
-        blocks.append(("HunyuanVideo (untouched)",
+        blocks.append((untouched,
                        cells_from(read_per_class(path), classes), []))
     else:
-        blocks.append(("HunyuanVideo (untouched)", {},
+        blocks.append((untouched, {},
                        ["the whole baseline (no %s)" % path]))
 
     cells, missing = {}, []

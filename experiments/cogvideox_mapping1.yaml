@@ -1,0 +1,17 @@
+# Safe Mapping 1 on CogVideoX: the same ten classes redirected towards a near
+# neighbour. Pairs with cogvideox_mapping2 and cogvideox_null in the mapping
+# ablation, and shares its baseline with them -- the tree is keyed by the
+# prompt set and the backbone, not by the mapping.
+name: cogvideox_mapping1
+kind: objects
+method: fomo
+label: FOMO (Safe Mapping 1)
+
+model: cogvideox
+
+prompts: imagenette
+mappings: experiments/mappings/imagenette.tsv
+mapping: mapping1
+
+train:
+  checkpoint: checkpoint-000200

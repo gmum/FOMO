@@ -1,0 +1,19 @@
+# No safe target on CogVideoX: the concept is removed and nothing is put in its
+# place. Both the target concept and the target prompt are empty in the table,
+# which switches off localisation on the target side.
+#
+# `mapping` is quoted because an unquoted null is YAML's null value, not the
+# string the table spells in its second column.
+name: cogvideox_null
+kind: objects
+method: fomo
+label: FOMO (Null)
+
+model: cogvideox
+
+prompts: imagenette
+mappings: experiments/mappings/imagenette.tsv
+mapping: "null"
+
+train:
+  checkpoint: checkpoint-000200
